@@ -1,0 +1,85 @@
+/* 
+  Localizable.strings
+  PockedGuard
+
+  Created by Арсен Дадаев on 25.06.2025.
+  
+*/
+
+/* Common */
+"Today" = "Сегодня";
+"Cancel" = "Отмена";
+"Done" = "Готово";
+"Edit" = "Редактировать";
+"Delete" = "Удалить";
+"Error.Title" = "Ошибка";
+"OK" = "Ок";
+"Income" = "Доходы";
+"Expenses" = "Расходы";
+"TextField.IsEmptyError" = "Поле не может быть пустым";
+"DefaultAccountTitle" = "Основной счет";
+"UnknownError" = "Произошла неизвестная ошибка.";
+"accountNotFoundError" = "Счета не найдены. Сначала создайте счет.";
+"templatesEmptyError" = "Список шаблонов пуст.";
+"categoriesEmptyError" = "Список категорий пуст.";
+"Total" = "Итого";
+"Transaction.EmptyLabel" = "Операции за выбранный период не найдены";
+
+/* Month*/
+"Month.January" = "Январь";
+"Month.February" = "Февраль";
+"Month.March" = "Март";
+"Month.April" = "Апрель";
+"Month.May" = "Май";
+"Month.June" = "Июнь";
+"Month.July" = "Июль";
+"Month.August" = "Август";
+"Month.September" = "Сентябрь";
+"Month.October" = "Октябрь";
+"Month.November" = "Ноябрь";
+"Month.December" = "Декабрь";
+
+/* Period */
+"Period.Day" = "День";
+"Period.Week" = "Неделя";
+"Period.Month" = "Месяц";
+"Period" = "Период";
+
+/* Notification Screen */
+"NotificationScreen.Title" = "Напоминания";
+"NotificationScreen.Create.Title" = "Создать напоминание";
+"NotificationScreen.ReminderTitle" = "Заголовок";
+"NotificationScreen.TitlePlaceholder" = "Заголовок напоминания";
+"NotificationScreen.TextPlaceholder" = "Текст напоминания";
+"NotificationScreen.ReminderText" = "Текст";
+"NotificationScreen.Frequency" = "Периодичность";
+"NotificationScreen.Time" = "Время";
+"NotificationScreen.StartDate" = "Дата начала напоминания";
+"NotificationScreen.EveryWeek" = "Каждую неделю";
+"NotificationScreen.EveryMonth" = "Каждый месяц";
+"NotificationScreen.EveryDay" = "Каждый день";
+"NotificationScreen.Once" = "Один раз";
+"NotificationScreen.EmptyLabel" = "Ваш список напоминаний пуст. Добавьте новые напоминания, чтобы ничего не забыть!";
+
+/*Add Screen*/
+"AddScreen.AmountPlaceholder" = "0 ₽";
+"AddScreen.DescriptionPlaceholder" = "Комментарий...";
+"AddScreen.TemplatesLabelTitle" = "Шаблоны операций";
+"AddScreen.CategoryLabelTitle" = "Категории";
+"AddScreen.TemplatesInfoLabel" = "Шаблоны — это готовые повторяющиеся операции";
+"AddScreen.AmountError" = "Сумма должна быть больше нуля.";
+"AddScreen.CategoryNotSelectedError" = "Пожалуйста, выберите категорию.";
+
+/*Transaction categories*/
+"TransactionCategories.Health" = "Здоровье";
+"TransactionCategories.Products" = "Продукты";
+"TransactionCategories.Clothes" = "Одежда";
+"TransactionCategories.Leisure" = "Досуг";
+"TransactionCategories.Other" = "Другое";
+"TransactionCategories.Housing" = "Квартира и ЖКХ";
+
+/*Income Categories*/
+"IncomeCategories.Salary" = "Зарплата";
+"IncomeCategories.Investments" = "Инвестиции";
+"IncomeCategories.Gifts" = "Подарки";
+"IncomeCategories.OtherIncome" = "Другое";
