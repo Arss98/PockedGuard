@@ -112,7 +112,7 @@ extension BaseViewController {
     }
     
     func showErrorAlert(
-        title: String? = .Localized.Common.error.localized,
+        title: String? = .Localized.Error.title.localized,
         message: String,
         handler: (() -> Void)? = nil
     ) {

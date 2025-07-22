@@ -26,16 +26,10 @@ extension String {
             case done
             case edit
             case delete
-            case error
             case ok
-            case textEmpty
             case income
             case expenses
             case accountTitle
-            case unknownError
-            case accountNotFoundError
-            case templatesEmptyError
-            case categoriesEmptyError
             case total
             case transactionsEmptyLabel 
         }
@@ -82,7 +76,6 @@ extension String {
             case templatesTitle
             case categoryTitle
             case templatesInfo
-            case amountError
             case categoryNotSelectedError
         }
         
@@ -101,6 +94,27 @@ extension String {
             case gifts
             case otherIncome
         }
+        
+        enum Error {
+            case title
+            case textFieldIsEmpty
+            case unknown
+            case accountEmpty
+            case templatesEmpty
+            case categoriesEmpty
+            case titleEmpty
+            case descriptionEmpty
+            case amountError
+            case notificationUpdateFailed
+            case notificationSchedulingFailed
+            case notificationFetchFailed
+            case notificationDeleteFailed
+            case failedToCreateDefaultData
+            case transactionFetchFailed
+            case accountFetchFailed
+            case dataFetchFailed
+
+        }
     }
 }
 
@@ -114,16 +128,10 @@ extension String.Localized.Common: Localizable {
         case .done: return "Done"
         case .edit: return "Edit"
         case .delete: return "Delete"
-        case .error: return "Error.Title"
         case .ok: return "OK"
-        case .textEmpty: return "TextField.IsEmptyError"
         case .income: return "Income"
         case .expenses: return "Expenses"
         case .accountTitle: return "DefaultAccountTitle"
-        case .unknownError: return "UnknownError"
-        case .accountNotFoundError: return "AccountNotFoundError"
-        case .templatesEmptyError: return "TemplatesEmptyError"
-        case .categoriesEmptyError: return "CategoriesEmptyError"
         case .total: return "Total"
         case .transactionsEmptyLabel: return "Transaction.EmptyLabel"
         }
@@ -192,7 +200,6 @@ extension String.Localized.Add: Localizable {
         case .templatesTitle: return "AddScreen.TemplatesLabelTitle"
         case .categoryTitle: return "AddScreen.CategoryLabelTitle"
         case .templatesInfo: return "AddScreen.TemplatesInfoLabel"
-        case .amountError: return "AddScreen.AmountError"
         case .categoryNotSelectedError: return "AddScreen.CategoryNotSelectedError"
         }
     }
@@ -220,6 +227,31 @@ extension String.Localized.IncomeCategories: Localizable {
         case .investments: return "IncomeCategories.Investments"
         case .gifts: return "IncomeCategories.Gifts"
         case .otherIncome: return "IncomeCategories.OtherIncome"
+        }
+    }
+}
+
+// MARK: - Error
+extension String.Localized.Error: Localizable {
+    var key: String {
+        switch self {
+        case .title: return "Error.Title"
+        case .textFieldIsEmpty: return "Error.TextFieldIsEmpty"
+        case .unknown: return "Error.Unknown"
+        case .accountEmpty: return "Error.AccountEmpty"
+        case .templatesEmpty: return "Error.TemplatesEmpty"
+        case .categoriesEmpty: return "Error.CategoriesEmpty"
+        case .titleEmpty: return "Error.TitleEmpty"
+        case .descriptionEmpty: return "Error.DescriptionEmpty"
+        case .amountError: return "Error.Amount"
+        case .notificationUpdateFailed: return "Error.NotificationUpdateFailed"
+        case .notificationSchedulingFailed: return "Error.NotificationSchedulingFailed"
+        case .notificationFetchFailed: return "Error.NotificationFetchFailed"
+        case .notificationDeleteFailed: return "Error.NotificationDeleteFailed"
+        case .failedToCreateDefaultData: return "Error.FailedToCreateDefaultData"
+        case .transactionFetchFailed: return "Error.TransactionFetchFailed"
+        case .accountFetchFailed: return "Error.AccountFetchFailed"
+        case .dataFetchFailed: return "Error.DataFetchFailed"
         }
     }
 }

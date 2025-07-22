@@ -9,13 +9,13 @@ import RxSwift
 import RxCocoa
 
 final class TabBarController: UITabBarController {
-    // MARK: - Properties
+    // MARK: - Public properties
+    var onAddButtonTapped: (() -> Void)?
     var isHiddenTabBar: Bool = false {
-        didSet {
-            animateTabBatVisibility()
-        }
+        didSet { animateTabBatVisibility() }
     }
     
+    // MARK: - Private properties
     private lazy var customTabBar: CustomTabBar = .init()
     private let disposeBag: DisposeBag = .init()
     
@@ -24,7 +24,6 @@ final class TabBarController: UITabBarController {
         super.viewDidLoad()
         setupTabBar()
         setupBindings()
-        setFirstNavigationController()
         setConstraints()
     }
     
@@ -32,13 +31,18 @@ final class TabBarController: UITabBarController {
         super.viewWillLayoutSubviews()
         tabBar.isHidden = true
     }
+    
+    // MARK: - Public method
+    func setViewControllers(_ controllers: [UIViewController]) {
+        viewControllers = controllers
+        customTabBar.selectButton(at: 0)
+    }
 }
 
 // MARK: - Setup tabbar methods
 private extension TabBarController {
     func setupTabBar() {
         view.backgroundColor = .appBackground
-        viewControllers = AppRouter.shared.configureTabBarControllers()
         view.addSubview(customTabBar)
     }
     
@@ -52,16 +56,10 @@ private extension TabBarController {
             .disposed(by: disposeBag)
         
         customTabBar.addButtonTapped
-            .subscribe(onNext: { [weak self] in
-                guard let self else { return }
-                AppRouter.shared.presentAddViewController(from: self)
+            .subscribe(with: self, onNext: { controller, _ in
+                controller.onAddButtonTapped?()
             })
             .disposed(by: disposeBag)
-    }
-    
-    func setFirstNavigationController() {
-        guard let navigationVC = viewControllers?.first as? UINavigationController else { return }
-        AppRouter.shared.setCurrentNavigationController(navigationVC)
     }
 }
 

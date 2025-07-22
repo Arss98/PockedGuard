@@ -8,10 +8,10 @@
 import UIKit
 
 final class CategoriesViewController: BaseViewController {
-    let presenter: CategoriesPresenterProtocol
+    private let viewModel: CategoriesViewModelProtocol
     
-    init(presenter: CategoriesPresenterProtocol) {
-        self.presenter = presenter
+    init(viewModel: CategoriesViewModelProtocol) {
+        self.viewModel = viewModel
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -24,7 +24,3 @@ final class CategoriesViewController: BaseViewController {
     }
 }
 
-// MARK: - CategoriesViewProtocol
-extension CategoriesViewController: CategoriesViewProtocol {
-    
-}

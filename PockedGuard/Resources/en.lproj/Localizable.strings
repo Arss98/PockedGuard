@@ -12,16 +12,10 @@
 "Done" = "Готово";
 "Edit" = "Редактировать";
 "Delete" = "Удалить";
-"Error.Title" = "Ошибка";
 "OK" = "Ок";
 "Income" = "Доходы";
 "Expenses" = "Расходы";
-"TextField.IsEmptyError" = "Поле не может быть пустым";
 "DefaultAccountTitle" = "Основной счет";
-"UnknownError" = "Произошла неизвестная ошибка.";
-"accountNotFoundError" = "Счета не найдены. Сначала создайте счет.";
-"templatesEmptyError" = "Список шаблонов пуст.";
-"categoriesEmptyError" = "Список категорий пуст.";
 "Total" = "Итого";
 "Transaction.EmptyLabel" = "Операции за выбранный период не найдены";
 
@@ -67,7 +61,6 @@
 "AddScreen.TemplatesLabelTitle" = "Шаблоны операций";
 "AddScreen.CategoryLabelTitle" = "Категории";
 "AddScreen.TemplatesInfoLabel" = "Шаблоны — это готовые повторяющиеся операции";
-"AddScreen.AmountError" = "Сумма должна быть больше нуля.";
 "AddScreen.CategoryNotSelectedError" = "Пожалуйста, выберите категорию.";
 
 /*Transaction categories*/
@@ -83,3 +76,23 @@
 "IncomeCategories.Investments" = "Инвестиции";
 "IncomeCategories.Gifts" = "Подарки";
 "IncomeCategories.OtherIncome" = "Другое";
+
+/* Error */
+"Error.Title" = "Ошибка";
+"Error.TextFieldIsEmpty" = "Поле не может быть пустым";
+"Error.Unknown" = "Произошла неизвестная ошибка.";
+"Error.AccountEmpty" = "Счета не найдены. Сначала создайте счет.";
+"Error.TemplatesEmpty" = "Список шаблонов пуст.";
+"Error.CategoriesEmpty" = "Список категорий пуст.";
+"Error.TitleEmpty" = "Поле заголовка не может быть пустым";
+"Error.DescriptionEmpty" = "Поле описания не может быть пустым";
+"Error.Amount" = "Сумма должна быть больше нуля.";
+"Error.NotificationUpdateFailed" = "Не удалось обновить уведомление.";
+"Error.NotificationSchedulingFailed" = "Не удалось запланировать уведомление.";
+"Error.NotificationFetchFailed" = "Не удалось загрузить уведомления.";
+"Error.NotificationDeleteFailed" = "Не удалось удалить уведомление.";
+"Error.FailedToCreateDefaultData" = "Произошла ошибка при попытке создать данных по умолчанию.";
+"Error.TransactionFetchFailed" = "Произошла ошибка при загрузке данных об операциях.";
+"Error.AccountFetchFailed" = "Произошла ошибка при загрузке данных об счетах.";
+"Error.DataFetchFailed" = "Произошла ошибка при загрузке данных.";
+

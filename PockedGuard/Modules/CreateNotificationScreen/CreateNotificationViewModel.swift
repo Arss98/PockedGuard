@@ -9,26 +9,18 @@ import RxSwift
 import RxCocoa
 
 protocol CreateNotificationViewModelProtocol {
-    var title: BehaviorRelay<String> { get }
-    var notes: BehaviorRelay<String> { get }
-    var time: BehaviorRelay<Date> { get }
-    var date: BehaviorRelay<Date> { get }
-    var reminderType: BehaviorRelay<ReminderType> { get }
-    var isLoading: BehaviorRelay<Bool> { get }
+    var input: CreateNotificationViewModel.Input { get }
+    var output: CreateNotificationViewModel.Output { get }
     var mode: CreateNotificationViewModel.Mode { get }
-    func saveNotification() -> Completable
 }
 
 final class CreateNotificationViewModel: CreateNotificationViewModelProtocol {
-    // MARK: - Properties
-    let title: BehaviorRelay<String> = .init(value: "")
-    let notes: BehaviorRelay<String> = .init(value: "")
-    let time: BehaviorRelay<Date> = .init(value: Date())
-    let date: BehaviorRelay<Date> = .init(value: Date())
-    let reminderType: BehaviorRelay<ReminderType> = .init(value: .once)
-    let isLoading: BehaviorRelay<Bool> = .init(value: false)
+    // MARK: - public Properties
+    let input: Input
+    let output: Output
     let mode: Mode
     
+    // MARK: - Private properties
     private let combainedDateTime: BehaviorRelay<Date> = .init(value: Date())
     private let coreDataService: CoreDataNotificationProtocol
     private let notificationScheduler: NotificationSchedulerProtocol
@@ -49,103 +41,23 @@ final class CreateNotificationViewModel: CreateNotificationViewModelProtocol {
         self.coreDataService = coreDataService
         self.notificationScheduler = notificationScheduler
         self.mode = mode
+        self.input = .init()
+        self.output = .init()
         setInitialValues()
-        setupCombineDateTime()
-    }
-}
-
-// MARK: - Public methods
-extension CreateNotificationViewModel {
-    func saveNotification() -> Completable {
-        isLoading.accept(true)
-        
-        let operation: Completable = {
-            switch mode {
-            case .add: return addNotification()
-            case .edit(let notification): return updateNotification(notification: notification)
-            }
-        }()
-        
-        return operation
-            .do(onDispose: { [weak self] in
-                self?.isLoading.accept(false)
-            })
-            .andThen(Completable.deferred { [weak self] in
-                self?.isLoading.accept(false)
-                return .empty()
-            })
-            .catch { [weak self] error in
-                self?.isLoading.accept(false)
-                throw error
-            }
+        setupBindings()
     }
 }
 
 // MARK: - Private methods
 private extension CreateNotificationViewModel {
-    func setInitialValues() {
-        if case .edit(let notification) = mode {
-            self.notificationToEdit = notification
-            title.accept(notification.title)
-            notes.accept(notification.notes)
-            date.accept(notification.date)
-            reminderType.accept(notification.reminderType)
-        }
-    }
-    
-    func addNotification() -> Completable {
-        let notification: NotificationDomainModel = .init(
-            id: UUID(),
-            title: title.value,
-            notes: notes.value,
-            date: combainedDateTime.value,
-            isActive: true,
-            reminderType: reminderType.value
-        )
-        
-        return coreDataService.addNotification(notification)
-            .andThen(Completable.create { [weak self] completable in
-                guard let self else { return Disposables.create() }
-                self.notificationScheduler.scheduleNotification(
-                    id: notification.id,
-                    title: notification.title,
-                    body: notification.notes,
-                    date: notification.date,
-                    reminderType: notification.reminderType,
-                    isActive: notification.isActive
-                )
-                completable(.completed)
-                return Disposables.create()
+    func setupBindings() {
+        input.saveAction
+            .subscribe(onNext: { [weak self] in
+                self?.saveNotification()
             })
-    }
-    
-    func updateNotification(notification: NotificationDomainModel) -> Completable {
-        coreDataService.updateNotification(
-            id: notification.id,
-            newTitle: title.value,
-            newNotes: notes.value,
-            newDate: combainedDateTime.value,
-            newIsActive: nil,
-            newReminderType: reminderType.value
-        )
-        .asCompletable()
-        .andThen(Completable.create { [weak self] completable in
-            guard let self else { return Disposables.create() }
-            self.notificationScheduler.updateNotification(
-                id: notification.id,
-                title: self.title.value,
-                body: self.notes.value,
-                date: self.combainedDateTime.value,
-                reminderType: self.reminderType.value,
-                isActive: true
-            )
-            completable(.completed)
-            return Disposables.create()
-        })
-    }
-    
-    func setupCombineDateTime() {
-        Observable.combineLatest(date, time) { date, time in
+            .disposed(by: disposeBag)
+        
+        Observable.combineLatest(input.date, input.time) { date, time in
             Calendar.current.date(
                 bySettingHour: Calendar.current.component(.hour, from: time),
                 minute: Calendar.current.component(.minute, from: time),
@@ -155,5 +67,150 @@ private extension CreateNotificationViewModel {
         }
         .bind(to: combainedDateTime)
         .disposed(by: disposeBag)
+    }
+    
+    func setInitialValues() {
+        if case .edit(let notification) = mode {
+            self.notificationToEdit = notification
+            input.title.accept(notification.title)
+            input.notes.accept(notification.notes)
+            input.date.accept(notification.date)
+            input.reminderType.accept(notification.reminderType)
+        }
+    }
+    
+    func saveNotification() {
+        output.isLoading.accept(true)
+        
+        do {
+            try validateInput()
+            
+            let operation: Completable = {
+                switch mode {
+                case .add: return addNotification()
+                case .edit(let notification): return updateNotification(notification: notification)
+                }
+            }()
+            
+            operation
+                .subscribe(
+                    onCompleted: { [weak self] in
+                        self?.output.isLoading.accept(false)
+                        self?.output.didFinish.onNext(())
+                    },
+                    onError: { [weak self] error in
+                        self?.output.isLoading.accept(false)
+                        self?.output.error.onNext(error)
+                    }
+                )
+                .disposed(by: disposeBag)
+        } catch {
+            output.isLoading.accept(false)
+            output.error.onNext(error)
+        }
+    }
+
+    func validateInput() throws {
+        guard !input.title.value.isEmpty else { throw CustomError.invalidTitle }
+        guard !input.notes.value.isEmpty else { throw CustomError.invalidNotes }
+    }
+    
+    func addNotification() -> Completable {
+        let notification: NotificationDomainModel = .init(
+            id: UUID(),
+            title: input.title.value,
+            notes: input.notes.value,
+            date: combainedDateTime.value,
+            isActive: true,
+            reminderType: input.reminderType.value
+        )
+        
+        return coreDataService.addNotification(notification)
+            .andThen(Completable.create { [weak self] completable in
+                guard let self else { return Disposables.create() }
+                do {
+                    try self.notificationScheduler.scheduleNotification(
+                        id: notification.id,
+                        title: notification.title,
+                        body: notification.notes,
+                        date: notification.date,
+                        reminderType: notification.reminderType,
+                        isActive: notification.isActive
+                    )
+                    completable(.completed)
+                } catch {
+                    completable(.error(CustomError.notificationSchedulingFailed))
+                }
+                return Disposables.create()
+            })
+    }
+    
+    func updateNotification(notification: NotificationDomainModel) -> Completable {
+        coreDataService.updateNotification(
+            id: notification.id,
+            newTitle: input.title.value,
+            newNotes: input.notes.value,
+            newDate: combainedDateTime.value,
+            newIsActive: nil,
+            newReminderType: input.reminderType.value
+        )
+        .asCompletable()
+        .andThen(Completable.create { [weak self] completable in
+            guard let self else { return Disposables.create() }
+            do {
+                try self.notificationScheduler.updateNotification(
+                    id: notification.id,
+                    title: self.input.title.value,
+                    body: self.input.notes.value,
+                    date: self.combainedDateTime.value,
+                    reminderType: self.input.reminderType.value,
+                    isActive: true
+                )
+                completable(.completed)
+            } catch {
+                completable(.error(CustomError.notificationUpdateFailed))
+            }
+            return Disposables.create()
+        })
+    }
+}
+
+// MARK: - Input, Output
+extension CreateNotificationViewModel {
+    struct Input {
+        let saveAction: PublishSubject<Void> = .init()
+        let title: BehaviorRelay<String> = .init(value: "")
+        let notes: BehaviorRelay<String> = .init(value: "")
+        let time: BehaviorRelay<Date> = .init(value: Date())
+        let date: BehaviorRelay<Date> = .init(value: Date())
+        let reminderType: BehaviorRelay<ReminderType> = .init(value: .once)
+    }
+    
+    struct Output {
+        let isLoading: BehaviorRelay<Bool> = .init(value: false)
+        let didFinish: PublishSubject<Void> = .init()
+        let error: PublishSubject<Error> = .init()
+    }
+}
+
+
+// MARK: - Error
+private enum CustomError: Error, LocalizedError {
+    case invalidTitle
+    case invalidNotes
+    case notificationSchedulingFailed
+    case notificationUpdateFailed
+    
+    var errorDescription: String? {
+        switch self {
+        case .invalidTitle:
+            return .Localized.Error.titleEmpty.localized
+        case .invalidNotes:
+            return .Localized.Error.descriptionEmpty.localized
+        case .notificationSchedulingFailed:
+            return .Localized.Error.notificationSchedulingFailed.localized
+        case .notificationUpdateFailed:
+            return .Localized.Error.notificationUpdateFailed.localized
+        }
     }
 }

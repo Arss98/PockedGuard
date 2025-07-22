@@ -9,43 +9,27 @@ import RxSwift
 import RxCocoa
 
 protocol MainViewModelProtocol: AnyObject {
-    var segmentsDiagram: BehaviorRelay<[SegmentDataModel]> { get }
-    var sections: BehaviorRelay<[TransactionSection]> { get }
-    var accounts: BehaviorRelay<[AccountDomainModel]> { get }
-    var showDatePickerTrigger: PublishRelay<Void> { get }
-    var periodText: BehaviorSubject<String> { get }
-    var selectedAccount: BehaviorRelay<AccountDomainModel?> { get }
-    var currentTransactionType: BehaviorRelay<TransactionType?> { get }
+    var input: MainViewModel.Input { get }
+    var output: MainViewModel.Output { get }
     func fetchData()
     func handlePeriodSelection(index: Int)
-    func updateCustomPeriod(start: Date, end: Date)
 }
 
 final class MainViewModel: MainViewModelProtocol {
     // MARK: - Public properties
-    let segmentsDiagram: BehaviorRelay<[SegmentDataModel]> = .init(value: [])
-    let sections: BehaviorRelay<[TransactionSection]> = .init(value: [])
-    let accounts: BehaviorRelay<[AccountDomainModel]> = .init(value: [])
-    let selectedAccount: BehaviorRelay<AccountDomainModel?> = .init(value: nil)
-    let periodText: BehaviorSubject<String> = .init(value: PeriodType.day.description)
-    let showDatePickerTrigger: PublishRelay<Void> = .init()
-    let currentTransactionType: BehaviorRelay<TransactionType?> = .init(value: nil)
+    let input: Input
+    let output: Output
     
     // MARK: - Private properties
     private let coreDataService: CoreDataTransactionProtocol
     private let disposeBag: DisposeBag = .init()
-    private var currentPeriod: PeriodType = .day {
-        didSet {
-            updateDisplayedPeriod()
-            fetchTransactions()
-        }
-    }
     
     // MARK: - init
     init(coreDataService: CoreDataTransactionProtocol = CoreDataService.shared) {
         self.coreDataService = coreDataService
+        self.input = .init()
+        self.output = .init()
         setupDefaultTemplatesIfNeeded()
-        updateDisplayedPeriod()
         setupBindings()
     }
 }
@@ -59,105 +43,106 @@ extension MainViewModel {
     
     func handlePeriodSelection(index: Int) {
         switch index {
-        case 0: currentPeriod = .day
-        case 1: currentPeriod = .week
-        case 2: currentPeriod = .month
-        case 3: showDatePickerTrigger.accept(())
+        case 0: output.period.accept(.day)
+        case 1: output.period.accept(.week)
+        case 2: output.period.accept(.month)
+        case 3: input.showDatePickerTrigger.accept(())
         default:
             break
         }
-    }
-    
-    func updateCustomPeriod(start: Date, end: Date) {
-        currentPeriod = .custom(start: start, end: end)
     }
 }
 
 // MARK: - Private methods
 private extension MainViewModel {
     func setupDefaultTemplatesIfNeeded() {
-        let coreDataService = CoreDataService.shared
         if !coreDataService.isFirstLaunch() {
-            coreDataService.createDefaultCategories()
-                .andThen(coreDataService.createDefaultAccount())
-                .andThen(coreDataService.createDefaultTemplate())
-                .subscribe(onCompleted: {
-                    coreDataService.markFirstLaunch()
+            coreDataService.createDefaultData()
+                .subscribe(onCompleted: { [weak self] in
+                    self?.coreDataService.markFirstLaunch()
+                }, onError: { [weak self] _ in
+                    self?.output.error.onNext(CustomError.failedToCreateDefaultData)
                 })
                 .disposed(by: disposeBag)
         }
     }
 
     func setupBindings() {
-        currentTransactionType
+        input.currentTransactionType
             .subscribe(with: self, onNext: { viewModel, _ in
                 viewModel.fetchData()
             })
             .disposed(by: disposeBag)
         
-        selectedAccount
+        input.selectedAccount
             .subscribe(with: self, onNext: { viewModel, account in
+                viewModel.fetchTransactions()
+            })
+            .disposed(by: disposeBag)
+        
+        output.period
+            .subscribe(with: self, onNext: { viewModel, _ in
                 viewModel.fetchTransactions()
             })
             .disposed(by: disposeBag)
     }
     
     func fetchTransactions() {
+        output.isLoading.accept(true)
+        
         coreDataService.fetchTransactions(
-            by: currentTransactionType.value,
-            periodType: currentPeriod,
-            accountId: selectedAccount.value?.id,
+            by: input.currentTransactionType.value,
+            periodType: output.period.value,
+            accountId: input.selectedAccount.value?.id,
             categotyId: nil
         )
         .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
         .observe(on: MainScheduler.asyncInstance)
         .subscribe(with: self, onNext: { viewModel, transactions in
-            viewModel.groupTransactionsBySegments(transactions)
-            viewModel.groupTransactionsByCategory(transactions)
+            viewModel.groupTransactions(transactions)
+            viewModel.output.isLoading.accept(false)
+        }, onError: { viewModel, _ in
+            viewModel.output.isLoading.accept(false)
+            viewModel.output.error.onNext(CustomError.failedToFetchTransactions)
         })
         .disposed(by: disposeBag)
     }
     
     func fetchAccounts() {
-        coreDataService.fetchAccounts(by: currentTransactionType.value)
+        output.isLoading.accept(true)
+        
+        coreDataService.fetchAccounts(by: input.currentTransactionType.value)
             .observe(on: MainScheduler.asyncInstance)
             .subscribe(with: self, onNext: { viewModel, accounts in
-                viewModel.accounts.accept(accounts)
+                viewModel.output.accounts.accept(accounts)
                 
                 if let defaultAccount = accounts.first(
                     where: {$0.name == .Localized.Common.accountTitle.localized}) {
-                    viewModel.selectedAccount.accept(defaultAccount)
+                    viewModel.input.selectedAccount.accept(defaultAccount)
                 }
+                
+                viewModel.output.isLoading.accept(false)
+            }, onError: { viewModel, _ in
+                viewModel.output.error.onNext(CustomError.failedToFetchAccounts)
+                viewModel.output.isLoading.accept(false)
             })
             .disposed(by: disposeBag)
     }
 
-    func updateDisplayedPeriod() {
-        periodText.onNext(currentPeriod.description)
-    }
-    
-    func groupTransactionsByCategory(_ transactions: [TransactionDomainModel]) {
+    func groupTransactions(_ transactions: [TransactionDomainModel]) {
         let totalAmount: Double = transactions.reduce(0) { $0 + $1.amount }
         let groupTransactions: [String: [TransactionDomainModel]] = Dictionary(grouping: transactions, by: { $0.category?.name ?? .Localized.TransactionCategories.other.localized })
-        let arrayGroupTransactions: [TransactionSection] =
-        groupTransactions.map { key, value in
+        
+        let sections: [TransactionSection] = groupTransactions.map { key, value in
             let categoryAmount: Double = value.reduce(0) { $0 + $1.amount }
             let percentage: Double = (categoryAmount / totalAmount) * 100
             
-            return TransactionSection(
-                categoryName: key,
-                percentage: String(format: "%.0f% %", percentage),
-                transactions: value
-            )
+            return TransactionSection(categoryName: key,percentage: String(format: "%.0f% %", percentage),
+                                      transactions: value)
         }
         .sorted { $0.categoryName < $1.categoryName}
         
-        sections.accept(arrayGroupTransactions)
-    }
-    
-    func groupTransactionsBySegments(_ transactions: [TransactionDomainModel]) {
-        let groupTransactrions: [String : [TransactionDomainModel]] = Dictionary(grouping: transactions, by: { $0.category?.name ?? "" })
-        let segments: [SegmentDataModel] = groupTransactrions.map { key, value in
+        let segments: [SegmentDataModel] = groupTransactions.map { key, value in
             let total: Double = value.reduce(.zero) { $0 + $1.amount }
             let color: String? = value.first?.category?.color
             
@@ -165,7 +150,27 @@ private extension MainViewModel {
         }
         .sorted { $0.value > $1.value }
         
-        segmentsDiagram.accept(segments)
+        output.sections.accept(sections)
+        output.segmentsDiagram.accept(segments)
+    }
+}
+
+// MARK: - Input, Output
+extension MainViewModel {
+    struct Input {
+        let selectedAccount: BehaviorRelay<AccountDomainModel?> = .init(value: nil)
+        let showDatePickerTrigger: PublishRelay<Void> = .init()
+        let currentTransactionType: BehaviorRelay<TransactionType?> = .init(value: nil)
+    }
+    
+    struct Output {
+        let showNotification: PublishSubject<Void> = .init()
+        let segmentsDiagram: BehaviorRelay<[SegmentDataModel]> = .init(value: [])
+        let sections: BehaviorRelay<[TransactionSection]> = .init(value: [])
+        let accounts: BehaviorRelay<[AccountDomainModel]> = .init(value: [])
+        let period: BehaviorRelay<PeriodType> = .init(value: .day)
+        let error: PublishSubject<Error> = .init()
+        let isLoading: BehaviorRelay<Bool> = .init(value: false)
     }
 }
 
@@ -193,6 +198,24 @@ enum PeriodType {
         case .custom(let start, let end):
             formatter.dateFormat = "dd.MM.yyyy"
             return "\(formatter.string(from: start)) - \(formatter.string(from: end))"
+        }
+    }
+}
+
+// MARK: - Error
+private enum CustomError: Error, LocalizedError  {
+    case failedToCreateDefaultData
+    case failedToFetchTransactions
+    case failedToFetchAccounts
+    
+    var errorDescription: String? {
+        switch self {
+        case .failedToCreateDefaultData:
+            return .Localized.Error.failedToCreateDefaultData.localized
+        case .failedToFetchTransactions:
+            return .Localized.Error.transactionFetchFailed.localized
+        case .failedToFetchAccounts:
+            return .Localized.Error.accountFetchFailed.localized
         }
     }
 }

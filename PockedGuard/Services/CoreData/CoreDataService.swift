@@ -42,6 +42,11 @@ protocol CoreDataTransactionProtocol {
     func fetchTransactions(by type: TransactionType?, periodType: PeriodType?, accountId: UUID?, categotyId: UUID?) -> Observable<[TransactionDomainModel]>
     func addTransaction(_ transaction: TransactionDomainModel) -> Completable
     func deleteTransaction(id: UUID) -> Completable
+    
+    // MARK: - Default Data methods
+    func isFirstLaunch() -> Bool
+    func markFirstLaunch()
+    func createDefaultData() -> Completable
 }
 
 final class CoreDataService {
@@ -87,6 +92,12 @@ final class CoreDataService {
     
     func markFirstLaunch() {
         UserDefaults.standard.set(true, forKey: firstLaunchKey)
+    }
+    
+    func createDefaultData() -> Completable {
+        createDefaultAccount()
+            .andThen(createDefaultTemplate())
+            .andThen(createDefaultCategories())
     }
 }
 

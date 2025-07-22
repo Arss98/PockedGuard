@@ -13,17 +13,17 @@ final class NotificationViewController: BaseViewController {
     private lazy var collectionLayout: UICollectionViewCompositionalLayout = .init { _, _ in
         let itemSize: NSCollectionLayoutSize = .init(
             widthDimension: .fractionalWidth(1),
-            heightDimension: .estimated(Constants.estimatedCellHeight))
+            heightDimension: .estimated(Constants.Layout.estimatedCellHeight))
         
         let item: NSCollectionLayoutItem = .init(layoutSize: itemSize)
         let groupSize: NSCollectionLayoutSize = .init(
             widthDimension: .fractionalWidth(1),
-            heightDimension: .estimated(Constants.estimatedCellHeight))
+            heightDimension: .estimated(Constants.Layout.estimatedCellHeight))
         
         let group: NSCollectionLayoutGroup = .horizontal(layoutSize: groupSize, subitems: [item])
-        group.contentInsets = .init(top: .zero, leading: Constants.defaultPadding, bottom: .zero, trailing: Constants.defaultPadding)
+        group.contentInsets = .init(top: .zero, leading: Constants.Layout.padding, bottom: .zero, trailing: Constants.Layout.padding)
         let section: NSCollectionLayoutSection = .init(group: group)
-        section.interGroupSpacing = Constants.minimumLineSpacing
+        section.interGroupSpacing = Constants.Layout.minimumLineSpacing
         
         return section
     }
@@ -34,7 +34,7 @@ final class NotificationViewController: BaseViewController {
         collection.showsVerticalScrollIndicator = false
         collection.backgroundColor = .clear
         collection.rx.setDelegate(self).disposed(by: disposeBag)
-        collection.contentInset.top = Constants.collectionViewTopInset
+        collection.contentInset.top = Constants.Layout.collectionViewTopInset
         collection.register(NotificationViewCell.self, forCellWithReuseIdentifier: String(describing: NotificationViewCell.self))
         
         return collection
@@ -43,13 +43,13 @@ final class NotificationViewController: BaseViewController {
     private lazy var isEmptyLabel: UILabel = {
         let label: UILabel = .init()
         label.translatesAutoresizingMaskIntoConstraints = false
-        label.font = .systemFont(ofSize: Constants.fontSize, weight: .medium)
+        label.font = .systemFont(ofSize: Constants.Text.fontSize, weight: .medium)
         label.textColor = .white
         label.textAlignment = .center
         label.alpha = .zero
         label.isHidden = true
         label.text = .Localized.Notification.emptyLabel.localized
-        label.numberOfLines = Constants.numberOfLines
+        label.numberOfLines = Constants.Text.numberOfLines
         
         return label
     }()
@@ -60,7 +60,7 @@ final class NotificationViewController: BaseViewController {
         button.setTitle(.Localized.Notification.createTitle.localized, for: .normal)
         button.backgroundColor = .appMainBlue
         button.tintColor = .white
-        button.layer.cornerRadius = Constants.buttonCornerRadius
+        button.layer.cornerRadius = Constants.Layout.buttonCornerRadius
         button.layer.masksToBounds = true
         return button
     }()
@@ -69,7 +69,7 @@ final class NotificationViewController: BaseViewController {
     private let viewModel: NotificationViewModelProtocol
     
     // MARK: - Init
-    init(viewModel: NotificationViewModelProtocol = NotificationViewModel()) {
+    init(viewModel: NotificationViewModelProtocol) {
         self.viewModel = viewModel
         super.init(nibName: nil, bundle: nil)
     }
@@ -99,12 +99,14 @@ final class NotificationViewController: BaseViewController {
 extension NotificationViewController: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView,
                         trailingSwipeActionsConfigurationForItemAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
-        let deleteAction = UIContextualAction(style: .destructive, title: .Localized.Common.delete.localized)
-        { [weak self] _, _, completion in
+        let deleteAction = UIContextualAction(
+            style: .destructive,
+            title: .Localized.Common.delete.localized) { [weak self] _, _, completion in
             guard let self else { return }
-            self.viewModel.deleteNotification(at: indexPath)
+            self.viewModel.input.deleteNotification.onNext(indexPath)
             completion(true)
         }
+        
         deleteAction.backgroundColor = .red
         deleteAction.image = UIImage(systemName: "trash")
         
@@ -126,14 +128,14 @@ extension NotificationViewController: UICollectionViewDelegate {
             title: .Localized.Common.edit.localized,
             image: UIImage(systemName: "pencil")) { [weak self] _ in
                 guard let self, let notification = self.viewModel.getNotification(at: indexPath) else { return }
-                self.viewModel.selectedNotification.onNext(notification)
+                self.viewModel.input.selectedNotification.onNext(notification)
             }
         
         let deleteAction: UIAction = .init(
             title: .Localized.Common.delete.localized,
             image: UIImage(systemName: "trash"),
             attributes: .destructive) { [weak self] _ in
-                self?.viewModel.deleteNotification(at: indexPath)
+                self?.viewModel.input.deleteNotification.onNext(indexPath)
             }
         
         return UIMenu(children: [editAction, deleteAction])
@@ -149,7 +151,7 @@ private extension NotificationViewController {
     }
     
     func setupBinding() {
-        viewModel.state
+        viewModel.output.state
             .observe(on: MainScheduler.asyncInstance)
             .subscribe(with: self, onNext: { controller, state in
                 switch state {
@@ -158,19 +160,19 @@ private extension NotificationViewController {
                 case .loaded:
                     controller.showActivityIndicator(false)
                 case .error(let error):
-                    controller.showErrorAlert(message: error)
+                    controller.showErrorAlert(message: error.localizedDescription)
                 }
             })
             .disposed(by: disposeBag)
         
-        viewModel.notifications
+        viewModel.output.notifications
             .asDriver(onErrorJustReturn: [])
             .drive(onNext: { [weak self] notificationList in
                 notificationList.isEmpty ? self?.showEmptyLabel(isShow: true) : self?.showEmptyLabel(isShow: false)
             })
             .disposed(by: disposeBag)
         
-        viewModel.notifications
+        viewModel.output.notifications
             .asDriver(onErrorJustReturn: [])
             .drive(notificationCollectionView.rx.items) { [weak self] collectionView, row, model in
                 guard let self, let cell = collectionView.dequeueReusableCell(
@@ -187,16 +189,16 @@ private extension NotificationViewController {
             .disposed(by: disposeBag)
         
         notificationCollectionView.rx.modelSelected(NotificationDomainModel.self)
-            .bind(to: viewModel.selectedNotification)
+            .bind(to: viewModel.input.selectedNotification)
             .disposed(by: disposeBag)
         
         createNotificationButton.rx.tap
-            .bind(to: viewModel.createNotificationTapped)
+            .bind(to: viewModel.input.createNotificationTapped)
             .disposed(by: disposeBag)
     }
     
     func showEmptyLabel(isShow: Bool) {
-        UIView.animate(withDuration: Constants.animationDuration) {
+        UIView.animate(withDuration: Constants.Animation.duration) {
             self.isEmptyLabel.alpha = isShow ? 1 : 0
             self.isEmptyLabel.isHidden = !isShow
         }
@@ -210,31 +212,39 @@ private extension NotificationViewController {
             
             isEmptyLabel.centerYAnchor.constraint(equalTo: notificationCollectionView.centerYAnchor),
             isEmptyLabel.centerXAnchor.constraint(equalTo: notificationCollectionView.centerXAnchor),
-            isEmptyLabel.widthAnchor.constraint(equalToConstant: Constants.widthEmtpyLabel),
+            isEmptyLabel.widthAnchor.constraint(equalToConstant: Constants.Layout.widthEmtpyLabel),
             
             createNotificationButton.topAnchor.constraint(equalTo: notificationCollectionView.bottomAnchor,
-                                                          constant: Constants.defaultPadding),
+                                                          constant: Constants.Layout.padding),
             createNotificationButton.leadingAnchor.constraint(equalTo: view.leadingAnchor,
-                                                              constant: Constants.defaultPadding),
+                                                              constant: Constants.Layout.padding),
             createNotificationButton.trailingAnchor.constraint(equalTo: view.trailingAnchor,
-                                                               constant: -Constants.defaultPadding),
+                                                               constant: -Constants.Layout.padding),
             createNotificationButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor,
-                                                             constant: -Constants.defaultPadding),
-            createNotificationButton.heightAnchor.constraint(equalToConstant: Constants.buttonHeight)
+                                                             constant: -Constants.Layout.padding),
+            createNotificationButton.heightAnchor.constraint(equalToConstant: Constants.Layout.buttonHeight)
         ])
     }
 }
 
 // MARK: - Constants
 private enum Constants {
-    static let defaultPadding: CGFloat = 16
-    static let buttonCornerRadius: CGFloat = 10
-    static let buttonHeight: CGFloat = 52
-    static let minimumLineSpacing: CGFloat = 12
-    static let estimatedCellHeight: CGFloat = 62
-    static let collectionViewTopInset: CGFloat = 12
-    static let fontSize: CGFloat = 16
-    static let animationDuration: TimeInterval = 0.3
-    static let numberOfLines: Int = 3
-    static let widthEmtpyLabel: CGFloat = 320
+    enum Layout {
+        static let padding: CGFloat = 16
+        static let buttonCornerRadius: CGFloat = 10
+        static let buttonHeight: CGFloat = 52
+        static let minimumLineSpacing: CGFloat = 12
+        static let estimatedCellHeight: CGFloat = 62
+        static let collectionViewTopInset: CGFloat = 12
+        static let widthEmtpyLabel: CGFloat = 320
+    }
+    
+    enum Text {
+        static let fontSize: CGFloat = 16
+        static let numberOfLines: Int = 3
+    }
+    
+    enum Animation {
+        static let duration: TimeInterval = 0.3
+    }
 }

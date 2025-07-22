@@ -9,23 +9,19 @@ import RxSwift
 import RxCocoa
 
 protocol NotificationViewModelProtocol {
-    var notifications: BehaviorRelay<[NotificationDomainModel]> { get }
-    var state: PublishRelay<NotificationViewModel.State> { get }
-    var createNotificationTapped: PublishSubject<Void> { get }
-    var selectedNotification: PublishSubject<NotificationDomainModel> { get }
+    var input: NotificationViewModel.Input { get }
+    var output: NotificationViewModel.Output { get }
     func fetchNotifications()
     func getNotification(at indexPath: IndexPath) -> NotificationDomainModel?
     func updateNotificationIsActive(id: UUID, isActive: Bool)
-    func deleteNotification(at indexPath: IndexPath)
 }
 
 final class NotificationViewModel: NotificationViewModelProtocol {
-    // MARK: - Properties
-    let notifications: BehaviorRelay<[NotificationDomainModel]> = .init(value: [])
-    let state: PublishRelay<State> = .init()
-    let createNotificationTapped: PublishSubject<Void> = .init()
-    let selectedNotification: PublishSubject<NotificationDomainModel> = .init()
+    // MARK: - Public properties
+    let input: Input
+    let output: Output
     
+    // MARK: - Private properties
     private let coreDataService: CoreDataNotificationProtocol
     private let notificationScheduler: NotificationSchedulerProtocol
     private let disposeBag: DisposeBag = .init()
@@ -33,7 +29,7 @@ final class NotificationViewModel: NotificationViewModelProtocol {
     enum State {
         case loading
         case loaded
-        case error(String)
+        case error(Error)
     }
     
     // MARK: - Init
@@ -43,27 +39,37 @@ final class NotificationViewModel: NotificationViewModelProtocol {
     ) {
         self.coreDataService = coreDataService
         self.notificationScheduler = notificationScheduler
+        self.input = .init()
+        self.output = .init()
         setupBinding()
     }
 }
 
 // MARK: - Public methods
 extension NotificationViewModel {
+    func setupBinding() {
+        input.deleteNotification
+            .subscribe(with: self) { viewModel, indexPath in
+                viewModel.deleteNotification(at: indexPath)
+            }
+            .disposed(by: disposeBag)
+    }
+    
     func fetchNotifications() {
-        self.state.accept(.loading)
+        self.output.state.accept(.loading)
         
         coreDataService.fetchNotifications()
             .subscribe(with: self) { viewModel, notifications in
-                viewModel.notifications.accept(notifications)
-                viewModel.state.accept(.loaded)
+                viewModel.output.notifications.accept(notifications)
+                viewModel.output.state.accept(.loaded)
             } onError: { viewModel, error in
-                viewModel.state.accept(.error(error.localizedDescription))
+                viewModel.output.state.accept(.error(CustomError.notificationFetchFailed))
             }
             .disposed(by: disposeBag)
     }
     
     func getNotification(at indexPath: IndexPath) -> NotificationDomainModel? {
-        let currentNotification: [NotificationDomainModel] = notifications.value
+        let currentNotification: [NotificationDomainModel] = output.notifications.value
         guard indexPath.row < currentNotification.count else { return nil }
         
         return currentNotification[indexPath.row]
@@ -74,37 +80,44 @@ extension NotificationViewModel {
             .subscribe(with: self, onSuccess: { viewModel, updateModel in
                 guard let updateModel else { return }
                 
-                var currentNotification: [NotificationDomainModel] = viewModel.notifications.value
+                var currentNotification: [NotificationDomainModel] = viewModel.output.notifications.value
                 if let index = currentNotification.firstIndex(where: { $0.id == id }) {
                     currentNotification[index] = updateModel
-                    viewModel.notifications.accept(currentNotification)
+                    viewModel.output.notifications.accept(currentNotification)
                 }
                 
-                viewModel.notificationScheduler.updateNotification(
-                    id: id,
-                    title: updateModel.title,
-                    body: updateModel.notes,
-                    date: updateModel.date,
-                    reminderType: updateModel.reminderType,
-                    isActive: isActive
-                )
+                do {
+                   try viewModel.notificationScheduler.updateNotification(
+                        id: id,
+                        title: updateModel.title,
+                        body: updateModel.notes,
+                        date: updateModel.date,
+                        reminderType: updateModel.reminderType,
+                        isActive: isActive
+                    )
+                } catch {
+                    viewModel.output.state.accept(.error(CustomError.notificationUpdateFailed))
+                }
             }, onFailure: { viewModel, error in
-                viewModel.state.accept(.error(error.localizedDescription))
+                viewModel.output.state.accept(.error(CustomError.notificationUpdateFailed))
             })
             .disposed(by: disposeBag)
     }
-    
+}
+
+// MARK: - Private methods
+private extension NotificationViewModel {
     func deleteNotification(at indexPath: IndexPath) {
-        var currentNotifications = notifications.value
+        var currentNotifications = output.notifications.value
         guard indexPath.row < currentNotifications.count else { return }
         
         let idToDelete: UUID = currentNotifications[indexPath.row].id
         currentNotifications.remove(at: indexPath.row)
-        notifications.accept(currentNotifications)
+        output.notifications.accept(currentNotifications)
         
         coreDataService.deleteNotification(id: idToDelete)
             .subscribe(with: self, onError: { viewModel, error in
-                viewModel.state.accept(.error(error.localizedDescription))
+                viewModel.output.state.accept(.error(CustomError.notificationDeleteFailed))
             })
             .disposed(by: disposeBag)
         
@@ -112,30 +125,34 @@ extension NotificationViewModel {
     }
 }
 
-// MARK: - Private methods
-private extension NotificationViewModel {
-    func setupBinding() {
-        createNotificationTapped
-            .subscribe(with: self, onNext: { viewModel, _ in
-                viewModel.navigateToCreateNotification()
-            })
-            .disposed(by: disposeBag)
-        
-        selectedNotification
-            .subscribe(with: self, onNext: { viewModel, model in
-                viewModel.navigateToEditNotification(model: model)
-            })
-            .disposed(by: disposeBag)
+// MARK: - Input, Output
+extension NotificationViewModel {
+    struct Input {
+        let createNotificationTapped: PublishSubject<Void> = .init()
+        let selectedNotification: PublishSubject<NotificationDomainModel> = .init()
+        let deleteNotification: PublishSubject<IndexPath> = .init()
     }
     
-    // MARK: - Navigate
-    func navigateToCreateNotification() {
-        let createView: CreateNotificationViewController = .init()
-        AppRouter.shared.push(createView, animated: true)
+    struct Output {
+        let notifications: BehaviorRelay<[NotificationDomainModel]> = .init(value: [])
+        let state: PublishRelay<State> = .init()
     }
+}
+
+// MARK: - Error
+private enum CustomError: Error, LocalizedError {
+    case notificationUpdateFailed
+    case notificationFetchFailed
+    case notificationDeleteFailed
     
-    func navigateToEditNotification(model: NotificationDomainModel) {
-        let editView:CreateNotificationViewController = .init(mode: .edit(model))
-        AppRouter.shared.push(editView, animated: true)
+    var errorDescription: String? {
+        switch self {
+        case .notificationUpdateFailed:
+            return .Localized.Error.notificationUpdateFailed.localized
+        case .notificationFetchFailed:
+            return .Localized.Error.notificationFetchFailed.localized
+        case .notificationDeleteFailed:
+            return .Localized.Error.notificationDeleteFailed.localized
+        }
     }
 }

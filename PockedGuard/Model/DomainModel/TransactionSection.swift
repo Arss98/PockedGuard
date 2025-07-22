@@ -11,5 +11,4 @@ struct TransactionSection {
     let categoryName: String
     let percentage: String
     let transactions: [TransactionDomainModel]
-    var isExpanded: Bool = false
 }

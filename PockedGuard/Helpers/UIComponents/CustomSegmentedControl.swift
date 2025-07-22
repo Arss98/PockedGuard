@@ -58,6 +58,7 @@ private extension CustomSegmentedControl {
     func setupUI() {
         backgroundColor = .appCardAndField
         layer.cornerRadius = Constants.cornerRadius
+        translatesAutoresizingMaskIntoConstraints = false
     }
     
     func createButtons() {

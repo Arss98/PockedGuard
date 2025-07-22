@@ -12,6 +12,7 @@ import SwiftUI
 final class MainViewController: BaseViewController {
     // MARK: - UI Elements
     private lazy var financeSegmentedControl: CustomSegmentedControl = .init(items: Constants.SegmentedControl.financeItems)
+    private lazy var periodSegmentedControl: CustomSegmentedControl = .init(items: Constants.SegmentedControl.periodItems)
     
     private lazy var accountsCollection: UICollectionView = {
         let layout: UICollectionViewFlowLayout = .init()
@@ -35,17 +36,11 @@ final class MainViewController: BaseViewController {
     }()
     
     private lazy var circleDiagramView: UIHostingController<CircleDiagramView> = {
-        let circleDiagramView: CircleDiagramView = .init(segments: self.viewModel.segmentsDiagram.value)
+        let circleDiagramView: CircleDiagramView = .init(segments: self.viewModel.output.segmentsDiagram.value)
         let hostingController: UIHostingController<CircleDiagramView> = .init(rootView: circleDiagramView)
         hostingController.view.translatesAutoresizingMaskIntoConstraints = false
         hostingController.view.backgroundColor = .clear
         return hostingController
-    }()
-    
-    private lazy var periodSegmentedControl: CustomSegmentedControl = {
-        let segmentedControl: CustomSegmentedControl = .init(items: Constants.SegmentedControl.periodItems)
-        segmentedControl.translatesAutoresizingMaskIntoConstraints = false
-        return segmentedControl
     }()
     
     private lazy var periodLabel: UILabel = {
@@ -75,6 +70,7 @@ final class MainViewController: BaseViewController {
         let tableView: UITableView = .init()
         tableView.translatesAutoresizingMaskIntoConstraints = false
         tableView.backgroundColor = .clear
+        tableView.showsVerticalScrollIndicator = false
         tableView.isScrollEnabled = false
         tableView.separatorStyle = .none
         tableView.sectionHeaderTopPadding = .zero
@@ -108,11 +104,19 @@ final class MainViewController: BaseViewController {
         return label
     }()
     
+    private lazy var topConstraintPeriodSegmentedControl: NSLayoutConstraint = {
+        periodSegmentedControl.topAnchor.constraint(equalTo: periodLabel.bottomAnchor,
+                                                    constant: Constants.Layout.defaultPadding)
+    }()
+    
+    private lazy var tableViewHeightConstraint: NSLayoutConstraint = {
+        transactionTableView.heightAnchor.constraint(equalTo: transactionsBackgroundView.heightAnchor, multiplier: Constants.Layout.multiplier)
+    }()
+    
     // MARK: - Swipe Gesture Properties
     var viewModel: MainViewModelProtocol
     
     private var isExpanded = false
-    private var topConstraint: NSLayoutConstraint!
     private var heightConstraint: NSLayoutConstraint!
     private var sections: [TransactionSection] = []
     
@@ -142,31 +146,25 @@ final class MainViewController: BaseViewController {
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        guard let tabBarController = self.tabBarController as? TabBarController else { return }
-        tabBarController.isHiddenTabBar = false
+        toggleIsHiddenBar(false)
     }
 }
 
 // MARK: - Bindings methods
 private extension MainViewController {
     func setupBindings() {
-        bindUIComponents()
-        bindViewModelOutputs()
-        setupButtonBindings()
+        inputBindings()
+        outputBindings()
     }
     
-    func setupButtonBindings() {
+    func inputBindings() {
         setupLeftBarButtonItem(at: .right, image: .remindingIcon)
-            .subscribe(with: self, onNext: { controller, _ in
-                controller.remindingNavBarButtonAction()
-            })
+            .bind(to: viewModel.output.showNotification)
             .disposed(by: disposeBag)
-    }
-    
-    func bindUIComponents() {
+        
         financeSegmentedControl.selectedIndex
             .map { TransactionType(rawValue: Int16($0)) }
-            .bind(to: viewModel.currentTransactionType)
+            .bind(to: viewModel.input.currentTransactionType)
             .disposed(by: disposeBag)
         
         periodSegmentedControl.selectedIndex
@@ -176,16 +174,29 @@ private extension MainViewController {
             .disposed(by: disposeBag)
         
         accountsCollection.rx.modelSelected(AccountDomainModel.self)
-            .bind(to: viewModel.selectedAccount)
+            .bind(to: viewModel.input.selectedAccount)
+            .disposed(by: disposeBag)
+        
+        viewModel.input.showDatePickerTrigger
+            .observe(on: MainScheduler.asyncInstance)
+            .withUnretained(self)
+            .flatMapLatest { controller, _ in
+                controller.showDatePicker()
+            }
+            .subscribe(with: self) { controller, dates in
+                controller.viewModel.output.period.accept(.custom(start: dates.0, end: dates.1))
+            }
+            .disposed(by: disposeBag)
+        
+        DataUpdateService.shared.modalDismissedSubject
+            .subscribe(with: self) { controller, _ in
+                controller.viewModel.fetchData()
+            }
             .disposed(by: disposeBag)
     }
     
-    func bindViewModelOutputs() {
-        viewModel.periodText
-            .bind(to: periodLabel.rx.text)
-            .disposed(by: disposeBag)
-        
-        viewModel.sections
+    func outputBindings() {
+        viewModel.output.sections
             .subscribe(with: self) { controller, sections in
                 controller.noTransactionLabel.isHidden = !sections.isEmpty
                 controller.sections = sections
@@ -193,14 +204,14 @@ private extension MainViewController {
             }
             .disposed(by: disposeBag)
         
-        viewModel.segmentsDiagram
+        viewModel.output.segmentsDiagram
             .asDriver(onErrorJustReturn: [])
             .drive(onNext: { [weak self] segments in
                 self?.circleDiagramView.rootView = CircleDiagramView(segments: segments)
             })
             .disposed(by: disposeBag)
         
-        viewModel.accounts
+        viewModel.output.accounts
             .asDriver(onErrorJustReturn: [])
             .drive(accountsCollection.rx.items(
                 cellIdentifier: String(describing: AccountViewCell.self),
@@ -210,20 +221,24 @@ private extension MainViewController {
             }
             .disposed(by: disposeBag)
         
-        viewModel.showDatePickerTrigger
+        viewModel.output.period
             .observe(on: MainScheduler.asyncInstance)
-            .withUnretained(self)
-            .flatMapLatest { controller, _ in
-                controller.showDatePicker()
-            }
-            .subscribe(with: self) { controller, dates in
-                controller.viewModel.updateCustomPeriod(start: dates.0, end: dates.1)
+            .subscribe(with: self) { controller, period in
+                controller.periodLabel.text = period.description
             }
             .disposed(by: disposeBag)
         
-        DataUpdateService.shared.modalDismissedSubject
-            .subscribe(with: self) { controller, _ in
-                controller.viewModel.fetchData()
+        viewModel.output.error
+            .observe(on: MainScheduler.asyncInstance)
+            .subscribe(with: self) { controller, error in
+                controller.showErrorAlert(message: error.localizedDescription)
+            }
+            .disposed(by: disposeBag)
+        
+        viewModel.output.isLoading
+            .observe(on: MainScheduler.asyncInstance)
+            .subscribe(with: self) { controller, bool in
+                controller.showActivityIndicator(bool)
             }
             .disposed(by: disposeBag)
     }
@@ -236,7 +251,7 @@ extension MainViewController: UITableViewDelegate, UITableViewDataSource {
     }
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        sections[section].isExpanded ? sections[section].transactions.count : .zero
+        sections[section].transactions.count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -247,11 +262,8 @@ extension MainViewController: UITableViewDelegate, UITableViewDataSource {
         }
         
         let section = sections[indexPath.section]
-        let isLastCell: Bool = indexPath.row == section.transactions.count - 1
-        
-        cell.isUserInteractionEnabled = false
         cell.configure(with: section.transactions[indexPath.row])
-        cell.updateUI(isLastCell: isLastCell)
+        cell.selectionStyle = .none
         
         return cell
     }
@@ -262,7 +274,7 @@ extension MainViewController: UITableViewDelegate, UITableViewDataSource {
         ) as? TransactionsHeaderView else { return nil }
         
         header.backgroundConfiguration = UIBackgroundConfiguration.listPlainHeaderFooter()
-        header.backgroundConfiguration?.backgroundColor = .appCardAndField
+        header.backgroundConfiguration?.backgroundColor = .appBackground
         
         header.configure(
             categoryName: sections[section].categoryName,
@@ -271,44 +283,7 @@ extension MainViewController: UITableViewDelegate, UITableViewDataSource {
             color: sections[section].transactions.first?.category?.color
         )
         
-        let tapGesture = UITapGestureRecognizer()
-        header.addGestureRecognizer(tapGesture)
-        
-        tapGesture.rx.event
-            .subscribe(with: self, onNext: { controller, _ in
-                controller.toggleSectionExpansion(at: section)
-            })
-            .disposed(by: disposeBag)
-        
         return header
-    }
-    
-    func tableView(_ tableView: UITableView, viewForFooterInSection section: Int) -> UIView? {
-        UIView()
-    }
-    
-    func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat {
-        Constants.Layout.tableCellSpacing
-    }
-    
-    private func toggleSectionExpansion(at section: Int) {
-        sections[section].isExpanded.toggle()
-        
-        if let header = transactionTableView.headerView(forSection: section) as? TransactionsHeaderView {
-            header.updateUI(isExpanded: sections[section].isExpanded)
-        }
-        
-        transactionTableView.performBatchUpdates {
-            let indexPaths = sections[section].transactions.indices.map {
-                IndexPath(row: $0, section: section)
-            }
-            
-            if sections[section].isExpanded {
-                transactionTableView.insertRows(at: indexPaths, with: .fade)
-            } else {
-                transactionTableView.deleteRows(at: indexPaths, with: .fade)
-            }
-        }
     }
 }
 
@@ -324,19 +299,35 @@ private extension MainViewController {
         [dragHandleView, transactionTableView, noTransactionLabel].forEach { transactionsBackgroundView.addSubview($0) }
     }
     
+    func toggleIsHiddenBar(_ isHidden: Bool) {
+        guard let tabBarController = self.tabBarController as? TabBarController else { return }
+        tabBarController.isHiddenTabBar = isHidden
+        
+        navigationController?.setNavigationBarHidden(isHidden, animated: true)
+    }
+    
     func setConstraints() {
-        topConstraint = transactionsBackgroundView.topAnchor.constraint(
-            equalTo: periodSegmentedControl.bottomAnchor,
-            constant: Constants.Layout.defaultPadding
-        )
-        
-        heightConstraint = transactionsBackgroundView.heightAnchor.constraint(
-            equalToConstant: view.bounds.height * 0.4
-        )
-        
         NSLayoutConstraint.activate([
-            topConstraint,
-            heightConstraint,
+            accountsCollection.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: Constants.Layout.defaultPadding),
+            accountsCollection.leadingAnchor.constraint(equalTo: view.leadingAnchor,
+                                                        constant: Constants.Layout.defaultPadding),
+            accountsCollection.trailingAnchor.constraint(equalTo: view.trailingAnchor,
+                                                         constant: -Constants.Layout.defaultPadding),
+            accountsCollection.heightAnchor.constraint(equalToConstant: Constants.Layout.financeCardsCellHeight),
+            
+            circleDiagramView.view.topAnchor.constraint(equalTo: accountsCollection.bottomAnchor, constant: Constants.Layout.defaultVerticalPadding),
+            circleDiagramView.view.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.Layout.circleDiagramViewPadding),
+            circleDiagramView.view.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.Layout.circleDiagramViewPadding),
+            
+            periodLabel.topAnchor.constraint(equalTo: circleDiagramView.view.bottomAnchor, constant: Constants.Layout.defaultVerticalPadding),
+            periodLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            
+            topConstraintPeriodSegmentedControl,
+            periodSegmentedControl.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.Layout.defaultPadding),
+            periodSegmentedControl.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.Layout.defaultPadding),
+            
+            transactionsBackgroundView.topAnchor.constraint(equalTo: periodSegmentedControl.bottomAnchor,
+                                                            constant: Constants.Layout.defaultPadding),
             transactionsBackgroundView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             transactionsBackgroundView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             
@@ -361,24 +352,7 @@ private extension MainViewController {
                                                            constant: -Constants.Layout.defaultPadding),
             transactionTableView.bottomAnchor.constraint(equalTo: transactionsBackgroundView.bottomAnchor,
                                                          constant: -Constants.Layout.defaultPadding),
-            
-            accountsCollection.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: Constants.Layout.defaultPadding),
-            accountsCollection.leadingAnchor.constraint(equalTo: view.leadingAnchor,
-                                                        constant: Constants.Layout.defaultPadding),
-            accountsCollection.trailingAnchor.constraint(equalTo: view.trailingAnchor,
-                                                         constant: -Constants.Layout.defaultPadding),
-            accountsCollection.heightAnchor.constraint(equalToConstant: Constants.Layout.financeCardsCellHeight),
-            
-            circleDiagramView.view.topAnchor.constraint(equalTo: accountsCollection.bottomAnchor, constant: Constants.Layout.defaultVerticalPadding),
-            circleDiagramView.view.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.Layout.circleDiagramViewPadding),
-            circleDiagramView.view.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.Layout.circleDiagramViewPadding),
-            
-            periodLabel.topAnchor.constraint(equalTo: circleDiagramView.view.bottomAnchor, constant: Constants.Layout.defaultVerticalPadding),
-            periodLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            
-            periodSegmentedControl.topAnchor.constraint(equalTo: periodLabel.bottomAnchor, constant: Constants.Layout.defaultPadding),
-            periodSegmentedControl.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.Layout.defaultPadding),
-            periodSegmentedControl.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.Layout.defaultPadding),
+            tableViewHeightConstraint
         ])
     }
 }
@@ -405,80 +379,49 @@ private extension MainViewController {
     }
     
     func expandView() {
-        animateView(expanded: true,
-                    topAnchor: view.safeAreaLayoutGuide.topAnchor,
-                    height: view.bounds.height - view.safeAreaInsets.top,
-                    alphas: (0, 0, 0, 0))
+        toggleIsHiddenBar(true)
+        animateView(expanded: true, topAnchor: view.safeAreaLayoutGuide.topAnchor, alphas: (0, 0, 0))
     }
     
     func collapseView() {
-        animateView(expanded: false,
-                    topAnchor: periodSegmentedControl.bottomAnchor,
-                    height: view.bounds.height * 0.4,
-                    alphas: (1, 1, 1, 1))
+        toggleIsHiddenBar(false)
+        animateView(expanded: false, topAnchor: periodLabel.bottomAnchor, alphas: (1, 1, 1))
     }
     
     func animateView(
         expanded: Bool,
         topAnchor: NSLayoutYAxisAnchor,
-        height: CGFloat,
-        alphas: (accounts: CGFloat, diagram: CGFloat, label: CGFloat, control: CGFloat)
+        alphas: (accounts: CGFloat, diagram: CGFloat, label: CGFloat)
     ) {
         isExpanded = expanded
         
         UIView.animate(
-            withDuration: Constants.Animation.duration,
-            delay: .zero,
-            options: [.curveEaseInOut, .allowUserInteraction],
-            animations: {
-                self.updateViewConstraints(
-                    topAnchor: topAnchor,
-                    height: height,
-                    alphas: alphas
-                )
-            },
-            completion: { _ in
-                self.finalizeViewState(expanded: expanded)
+            withDuration: Constants.Animation.duration, delay: .zero,
+            options: [.curveEaseInOut, .allowUserInteraction], animations: {
+                self.updateViewConstraints(topAnchor: topAnchor, alphas: alphas)
             }
         )
     }
     
     func updateViewConstraints(
         topAnchor: NSLayoutYAxisAnchor,
-        height: CGFloat,
-        alphas: (accounts: CGFloat, diagram: CGFloat, label: CGFloat, control: CGFloat)
+        alphas: (accounts: CGFloat, diagram: CGFloat, label: CGFloat)
     ) {
-        topConstraint.isActive = false
-        topConstraint = transactionsBackgroundView.topAnchor.constraint(
-            equalTo: topAnchor,
-            constant: Constants.Layout.defaultPadding
-        )
-        topConstraint.isActive = true
+        topConstraintPeriodSegmentedControl.isActive = false
+        tableViewHeightConstraint.isActive = false
         
-        heightConstraint.constant = height
+        topConstraintPeriodSegmentedControl = periodSegmentedControl.topAnchor.constraint(
+            equalTo: topAnchor, constant: Constants.Layout.defaultPadding)
+        tableViewHeightConstraint = transactionTableView.heightAnchor.constraint(equalTo: transactionsBackgroundView.heightAnchor, multiplier: Constants.Layout.multiplier)
+    
+        topConstraintPeriodSegmentedControl.isActive = true
+        tableViewHeightConstraint.isActive = true
         
         accountsCollection.alpha = alphas.accounts
         circleDiagramView.view.alpha = alphas.diagram
         periodLabel.alpha = alphas.label
-        periodSegmentedControl.alpha = alphas.control
         
         view.layoutIfNeeded()
-    }
-    
-    func finalizeViewState(expanded: Bool) {
-        transactionTableView.isScrollEnabled = expanded
-        if !expanded {
-            transactionTableView.contentOffset = .zero
-        }
-    }
-}
-
-// MARK: - Button Actions
-private extension MainViewController {
-    func remindingNavBarButtonAction() {
-        let notificationVC: NotificationViewController = .init()
-        
-        AppRouter.shared.push(notificationVC, animated: true)
     }
 }
 
@@ -491,7 +434,6 @@ private enum Constants {
         static let financeCardsCellHeight: CGFloat = 60
         static let financeCardsCellWidth: CGFloat = 160
         static let financeCardsCollectionSpacing: CGFloat = 8
-        static let tableCellSpacing: CGFloat = 12
         static let dragHandleWidth: CGFloat = 40
         static let dragHandleHeight: CGFloat = 5
         static let dragHandlePadding: CGFloat = 10
@@ -499,6 +441,7 @@ private enum Constants {
         static let transactionsBackgroundShadowRadius: CGFloat = 6
         static let transactionsBackgroundShadowOpacity: Float = 0.4
         static let transactionsBackgroundShadowOffset = CGSize(width: 0, height: -4)
+        static let multiplier: CGFloat = 0.95
     }
     
     enum Animation {
@@ -510,16 +453,16 @@ private enum Constants {
     }
     
     enum SegmentedControl {
-        static let financeItems = [
-            String.Localized.Common.expenses.localized,
-            String.Localized.Common.income.localized
+        static let financeItems: [String] = [
+            .Localized.Common.expenses.localized,
+            .Localized.Common.income.localized
         ]
         
-        static let periodItems = [
-            String.Localized.Period.day.localized,
-            String.Localized.Period.week.localized,
-            String.Localized.Period.month.localized,
-            String.Localized.Common.period.localized
+        static let periodItems: [String] = [
+            .Localized.Period.day.localized,
+            .Localized.Period.week.localized,
+            .Localized.Period.month.localized,
+            .Localized.Common.period.localized
         ]
     }
 }

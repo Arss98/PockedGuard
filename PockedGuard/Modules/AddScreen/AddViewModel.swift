@@ -9,98 +9,55 @@ import RxSwift
 import RxCocoa
 
 protocol AddViewModelProtocol {
-    var error: Observable<Error> { get }
-    var amount: BehaviorRelay<Double> { get }
-    var notes: BehaviorRelay<String> { get }
-    var transactionType: BehaviorRelay<TransactionType?> { get }
-    var accounts: BehaviorRelay<[AccountDomainModel]> { get }
-    var templates: BehaviorRelay<[TemplatesDomainModel]> { get }
-    var categories: BehaviorRelay<[CategoryDomainModel]> { get }
-    var selectedCategory: BehaviorRelay<CategoryDomainModel?> { get }
-    var selectedTemplate: BehaviorRelay<TemplatesDomainModel?> { get }
-    var selectedAccount: BehaviorRelay<AccountDomainModel?> { get }
+    var input: AddViewModel.Input { get }
+    var output: AddViewModel.Output { get }
     func fetchData(by type: TransactionType?)
-    func saveTransaction() -> Completable
 }
 
 final class AddViewModel: AddViewModelProtocol {
     // MARK: - Public properties
-    let amount: BehaviorRelay<Double> = .init(value: 0)
-    let notes: BehaviorRelay<String> = .init(value: "")
-    let transactionType: BehaviorRelay<TransactionType?> = .init(value: nil)
-    let accounts: BehaviorRelay<[AccountDomainModel]> = .init(value: [])
-    let templates: BehaviorRelay<[TemplatesDomainModel]> = .init(value: [])
-    let categories: BehaviorRelay<[CategoryDomainModel]> = .init(value: [])
-    let selectedCategory: BehaviorRelay<CategoryDomainModel?> = .init(value: nil)
-    let selectedTemplate: BehaviorRelay<TemplatesDomainModel?> = .init(value: nil)
-    let selectedAccount: BehaviorRelay<AccountDomainModel?> = .init(value: nil)
-    
-    var error: Observable<Error> {
-        return errorSubject.asObservable()
-    }
+    let input: AddViewModel.Input
+    let output: AddViewModel.Output
     
     // MARK: - Private properties
-    private let errorSubject = PublishSubject<Error>()
     private let disposeBag: DisposeBag = .init()
     private let coreDataService: CoreDataTransactionProtocol
     
     // MARK: - Init
     init(coreDataService: CoreDataTransactionProtocol = CoreDataService.shared) {
         self.coreDataService = coreDataService
-        selectTemplate()
+        self.input = .init()
+        self.output = .init()
+        setupBinding()
     }
 }
 
 // MARK: - Publick methods
 extension AddViewModel {
-    func selectTemplate() {
-        selectedTemplate
+    func setupBinding() {
+        input.selectedTemplate
             .subscribe(onNext: { [weak self] template in
                 if let category: CategoryDomainModel = template?.category {
-                    self?.selectedCategory.accept(category)
+                    self?.input.selectedCategory.accept(category)
                 }
                 
                 if let amount: Double = template?.amount, amount > 0 {
-                    self?.amount.accept(amount)
+                    self?.input.amount.accept(amount)
                 }
             })
             .disposed(by: disposeBag)
-    }
-    
-    func saveTransaction() -> Completable {
-        return Completable.create { [weak self] complateble in
-            guard let self else {
-                complateble(.error(CustomError.unknown))
-                return Disposables.create()
+        
+        input.transactionType
+            .subscribe { [weak self] type in
+                self?.fetchData(by: type)
             }
-            
-            do {
-                try self.validateData()
-                
-                let transaction: TransactionDomainModel = .init(
-                    id: UUID(),
-                    amount: amount.value,
-                    date: Date(),
-                    type: transactionType.value ?? .income,
-                    paymentMethod: .card,
-                    notes: notes.value,
-                    category: selectedCategory.value,
-                    account: selectedAccount.value
-                )
-                
-                self.coreDataService.addTransaction(transaction)
-                    .subscribe {
-                        complateble(.completed)
-                    } onError: { error in
-                        complateble(.error(error))
-                    }
-                    .disposed(by: self.disposeBag)
-            } catch {
-                complateble(.error(error))
-            }
-            
-            return Disposables.create()
-        }
+            .disposed(by: disposeBag)
+        
+        input.saveAction
+            .subscribe(onNext: { [weak self] in
+                self?.saveTransaction()
+            })
+            .disposed(by: disposeBag)
     }
     
     func fetchData(by type: TransactionType? = nil) {
@@ -113,12 +70,36 @@ extension AddViewModel {
 // MARK: - Private methods
 private extension AddViewModel {
     func validateData() throws {
-        guard amount.value > 0 else {
-            throw CustomError.invalidAmount
-        }
-        
-        guard selectedCategory.value != nil else {
-            throw CustomError.categoryNotSelected
+        guard input.amount.value > 0 else { throw CustomError.invalidAmount }
+        guard input.selectedCategory.value != nil else { throw CustomError.categoryNotSelected }
+    }
+    
+    func saveTransaction() {
+        do {
+            try self.validateData()
+            
+            let transaction: TransactionDomainModel = .init(
+                id: UUID(),
+                amount: input.amount.value,
+                date: Date(),
+                type: input.transactionType.value ?? .income,
+                paymentMethod: .card,
+                notes: input.notes.value,
+                category: input.selectedCategory.value,
+                account: input.selectedAccount.value
+            )
+            
+            self.coreDataService.addTransaction(transaction)
+                .observe(on: MainScheduler.instance)
+                .subscribe { [weak self] in
+                    self?.input.dismiss.onNext(())
+                    DataUpdateService.shared.notifyModalDismissed()
+                } onError: { [weak self] error in
+                    self?.output.error.onNext(error)
+                }
+                .disposed(by: disposeBag)
+        } catch {
+            output.error.onNext(error)
         }
     }
     
@@ -127,15 +108,15 @@ private extension AddViewModel {
             .observe(on: MainScheduler.asyncInstance)
             .subscribe(onNext: { [weak self] accounts in
                 guard !accounts.isEmpty else {
-                    self?.errorSubject.onNext(CustomError.accountNotFound)
+                    self?.output.error.onNext(CustomError.accountNotFound)
                     return
                 }
                 
-                self?.accounts.accept(accounts)
+                self?.output.accounts.accept(accounts)
                 
                 if let defaultAccount = accounts.first(
                     where: {$0.name == .Localized.Common.accountTitle.localized}) {
-                    self?.selectedAccount.accept(defaultAccount)
+                    self?.input.selectedAccount.accept(defaultAccount)
                 }
             })
             .disposed(by: disposeBag)
@@ -146,11 +127,11 @@ private extension AddViewModel {
             .observe(on: MainScheduler.asyncInstance)
             .subscribe(onNext: { [weak self] templates in
                 guard !templates.isEmpty else {
-                    self?.errorSubject.onNext(CustomError.templatesEmpty)
+                    self?.output.error.onNext(CustomError.templatesEmpty)
                     return
                 }
                 
-                self?.templates.accept(templates)
+                self?.output.templates.accept(templates)
             })
             .disposed(by: disposeBag)
     }
@@ -160,13 +141,34 @@ private extension AddViewModel {
             .observe(on: MainScheduler.asyncInstance)
             .subscribe(onNext: { [weak self] categories in
                 guard !categories.isEmpty else {
-                    self?.errorSubject.onNext(CustomError.categoriesEmpty)
+                    self?.output.error.onNext(CustomError.categoriesEmpty)
                     return
                 }
                 
-                self?.categories.accept(categories)
+                self?.output.categories.accept(categories)
             })
             .disposed(by: disposeBag)
+    }
+}
+
+// MARK: - Input, Output struct
+extension AddViewModel {
+    struct Input {
+        let saveAction: PublishSubject<Void> = .init()
+        let amount: BehaviorRelay<Double> = .init(value: 0)
+        let notes: BehaviorRelay<String> = .init(value: "")
+        let transactionType: BehaviorRelay<TransactionType?> = .init(value: nil)
+        let selectedCategory: BehaviorRelay<CategoryDomainModel?> = .init(value: nil)
+        let selectedTemplate: BehaviorRelay<TemplatesDomainModel?> = .init(value: nil)
+        let selectedAccount: BehaviorRelay<AccountDomainModel?> = .init(value: nil)
+        let dismiss: PublishSubject<Void> = .init()
+    }
+    
+    struct Output {
+        let error: PublishSubject<Error> = .init()
+        let accounts: BehaviorRelay<[AccountDomainModel]> = .init(value: [])
+        let templates: BehaviorRelay<[TemplatesDomainModel]> = .init(value: [])
+        let categories: BehaviorRelay<[CategoryDomainModel]> = .init(value: [])
     }
 }
 
@@ -183,19 +185,19 @@ private enum CustomError: Error, LocalizedError {
     var errorDescription: String? {
         switch self {
         case .invalidAmount:
-            return .Localized.Add.amountError.localized
+            return .Localized.Error.amountError.localized
         case .categoryNotSelected:
             return .Localized.Add.categoryNotSelectedError.localized
         case .accountNotFound:
-            return .Localized.Common.accountNotFoundError.localized
+            return .Localized.Error.accountEmpty.localized
         case .templatesEmpty:
-            return .Localized.Common.templatesEmptyError.localized
+            return .Localized.Error.templatesEmpty.localized
         case .categoriesEmpty:
-            return .Localized.Common.categoriesEmptyError.localized
+            return .Localized.Error.categoriesEmpty.localized
         case .coreDataFailure(let message):
             return message
         case .unknown:
-            return .Localized.Common.unknownError.localized
+            return .Localized.Error.unknown.localized
         }
     }
 }

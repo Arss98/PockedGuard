@@ -8,10 +8,10 @@
 import UIKit
 
 class ProfileViewController: BaseViewController {
-    var presenter: ProfilePresenterProtocol
+    private let viewModel: ProfileViewModelProtocol
     
-    init(presenter: ProfilePresenterProtocol) {
-        self.presenter = presenter
+    init(viewModel: ProfileViewModelProtocol) {
+        self.viewModel = viewModel
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -22,8 +22,4 @@ class ProfileViewController: BaseViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
     }
-}
-
-// MARK: - ProfileViewProtocol
-extension ProfileViewController: ProfileViewProtocol {
 }

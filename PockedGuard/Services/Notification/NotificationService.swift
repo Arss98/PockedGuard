@@ -15,7 +15,8 @@ protocol NotificationSchedulerProtocol {
         date: Date,
         reminderType: ReminderType,
         isActive: Bool
-    )
+    ) throws
+    
     func updateNotification(
         id: UUID,
         title: String,
@@ -23,7 +24,8 @@ protocol NotificationSchedulerProtocol {
         date: Date,
         reminderType: ReminderType,
         isActive: Bool
-    )
+    ) throws
+    
     func removeNotification(id: UUID)
 }
 
@@ -42,9 +44,12 @@ final class NotificationScheduler: NotificationSchedulerProtocol {
         date: Date,
         reminderType: ReminderType,
         isActive: Bool
-    ) {
+    ) throws {
         guard isActive else { return }
 
+        var schedulingError: Error?
+        let semaphore = DispatchSemaphore(value: 0)
+        
         let content = UNMutableNotificationContent()
         content.title = title
         content.body = body
@@ -54,10 +59,13 @@ final class NotificationScheduler: NotificationSchedulerProtocol {
         let request = UNNotificationRequest(identifier: id.uuidString, content: content, trigger: trigger)
 
         notificationCenter.add(request) { error in
-            if let error = error {
-                print("Ошибка при планировании уведомления: \(error.localizedDescription)")
-            }
+            schedulingError = error
+            semaphore.signal()
         }
+        
+        semaphore.wait()
+        
+        if let error = schedulingError { throw error }
     }
 
     func updateNotification(
@@ -67,9 +75,9 @@ final class NotificationScheduler: NotificationSchedulerProtocol {
         date: Date,
         reminderType: ReminderType,
         isActive: Bool
-    ) {
+    ) throws {
         removeNotification(id: id)
-        scheduleNotification(id: id, title: title, body: body, date: date, reminderType: reminderType, isActive: isActive)
+        try scheduleNotification(id: id, title: title, body: body, date: date, reminderType: reminderType, isActive: isActive)
     }
 
     func removeNotification(id: UUID) {

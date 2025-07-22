@@ -8,10 +8,10 @@
 import UIKit
 
 final class AnalyticsViewController: BaseViewController {
-    let presenter: AnalyticsPresenterProtocol
+    private let viewModel: AnalyticsViewModelProtocol
     
-    init(presenter: AnalyticsPresenterProtocol) {
-        self.presenter = presenter
+    init(viewModel: AnalyticsViewModelProtocol) {
+        self.viewModel = viewModel
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -22,9 +22,4 @@ final class AnalyticsViewController: BaseViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
     }
-}
-
-// MARK: - AnalyticsViewProtocol
-extension AnalyticsViewController: AnalyticsViewProtocol {
-    
 }
