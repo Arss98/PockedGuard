@@ -9,7 +9,13 @@ import UIKit
 
 final class ProfileCoordinator: Coordinator {
     var childCoordinators: [Coordinator] = []
-    var navigationController: UINavigationController? = .init()
+    var navigationController: UINavigationController?
+    private let dataProvider: DataProviderProtocol
+    
+    init(dataProvider: DataProviderProtocol) {
+        self.dataProvider = dataProvider
+        self.navigationController = .init()
+    }
     
     func start() {
         showProfileScreen()

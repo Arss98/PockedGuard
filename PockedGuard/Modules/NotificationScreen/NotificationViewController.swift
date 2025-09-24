@@ -10,6 +10,10 @@ import RxCocoa
 
 final class NotificationViewController: BaseViewController {
     // MARK: - UI Elements
+    private typealias DataSource = UICollectionViewDiffableDataSource<Int, NotificationDomainModel>
+    private typealias Snapshot = NSDiffableDataSourceSnapshot<Int, NotificationDomainModel>
+    private var dataSource: DataSource?
+    
     private lazy var collectionLayout: UICollectionViewCompositionalLayout = .init { _, _ in
         let itemSize: NSCollectionLayoutSize = .init(
             widthDimension: .fractionalWidth(1),
@@ -83,12 +87,12 @@ final class NotificationViewController: BaseViewController {
         super.viewDidLoad()
         setupUI()
         setConstraints()
+        setupDataSource()
         setupBinding()
     }
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        viewModel.fetchNotifications()
         
         guard let tabBarController = self.tabBarController as? TabBarController else { return }
         tabBarController.isHiddenTabBar = true
@@ -97,20 +101,12 @@ final class NotificationViewController: BaseViewController {
 
 // MARK: - UICollectionViewDelegate
 extension NotificationViewController: UICollectionViewDelegate {
-    func collectionView(_ collectionView: UICollectionView,
-                        trailingSwipeActionsConfigurationForItemAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
-        let deleteAction = UIContextualAction(
-            style: .destructive,
-            title: .Localized.Common.delete.localized) { [weak self] _, _, completion in
-            guard let self else { return }
-            self.viewModel.input.deleteNotification.onNext(indexPath)
-            completion(true)
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        guard let notification: NotificationDomainModel = self.viewModel.getNotification(at: indexPath) else {
+            return
         }
         
-        deleteAction.backgroundColor = .red
-        deleteAction.image = UIImage(systemName: "trash")
-        
-        return UISwipeActionsConfiguration(actions: [deleteAction])
+        viewModel.input.selectedNotification.onNext(notification)
     }
     
     func collectionView(
@@ -127,7 +123,10 @@ extension NotificationViewController: UICollectionViewDelegate {
         let editAction: UIAction = .init(
             title: .Localized.Common.edit.localized,
             image: UIImage(systemName: "pencil")) { [weak self] _ in
-                guard let self, let notification = self.viewModel.getNotification(at: indexPath) else { return }
+                guard let self,
+                      let notification: NotificationDomainModel = self.viewModel.getNotification(at: indexPath) else {
+                    return
+                }
                 self.viewModel.input.selectedNotification.onNext(notification)
             }
         
@@ -150,6 +149,31 @@ private extension NotificationViewController {
         notificationCollectionView.addSubview(isEmptyLabel)
     }
     
+    func setupDataSource() {
+        dataSource = DataSource(collectionView: notificationCollectionView) { [weak self] collectionView, indexPath, notification in
+            guard let cell = collectionView.dequeueReusableCell(
+                withReuseIdentifier: String(describing: NotificationViewCell.self),
+                for: indexPath) as? NotificationViewCell else {
+                return UICollectionViewCell()
+            }
+            
+            cell.configure(title: notification.title, description: notification.notes, isActive: notification.isActive) { [weak self] isOn in
+                self?.viewModel.updateNotificationIsActive(id: notification.id, isActive: isOn)
+            }
+            
+            return cell
+        }
+    }
+    
+    func applySnapshot(notifications: [NotificationDomainModel], animatingDifferences: Bool = true) {
+        guard let dataSource else { return }
+        
+        var snapshot = Snapshot()
+        snapshot.appendSections([0])
+        snapshot.appendItems(notifications)
+        dataSource.apply(snapshot, animatingDifferences: animatingDifferences)
+    }
+    
     func setupBinding() {
         viewModel.output.state
             .observe(on: MainScheduler.asyncInstance)
@@ -166,30 +190,12 @@ private extension NotificationViewController {
             .disposed(by: disposeBag)
         
         viewModel.output.notifications
-            .asDriver(onErrorJustReturn: [])
-            .drive(onNext: { [weak self] notificationList in
-                notificationList.isEmpty ? self?.showEmptyLabel(isShow: true) : self?.showEmptyLabel(isShow: false)
-            })
-            .disposed(by: disposeBag)
-        
-        viewModel.output.notifications
-            .asDriver(onErrorJustReturn: [])
-            .drive(notificationCollectionView.rx.items) { [weak self] collectionView, row, model in
-                guard let self, let cell = collectionView.dequeueReusableCell(
-                    withReuseIdentifier: String(describing: NotificationViewCell.self),
-                    for: IndexPath(row: row, section: .zero)) as? NotificationViewCell else {
-                    return UICollectionViewCell()
-                }
-                
-                cell.configure(title: model.title, description: model.notes, isActive: model.isActive) { [weak self] isOn in
-                    self?.viewModel.updateNotificationIsActive(id: model.id, isActive: isOn)
-                }
-                return cell
+            .distinctUntilChanged()
+            .observe(on: MainScheduler.asyncInstance)
+            .subscribe(with: self) { controller, notifications in
+                controller.applySnapshot(notifications: notifications)
+                controller.showEmptyLabel(isShow: notifications.isEmpty)
             }
-            .disposed(by: disposeBag)
-        
-        notificationCollectionView.rx.modelSelected(NotificationDomainModel.self)
-            .bind(to: viewModel.input.selectedNotification)
             .disposed(by: disposeBag)
         
         createNotificationButton.rx.tap

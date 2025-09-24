@@ -12,9 +12,14 @@ protocol TabCoordinator: Coordinator {
 }
 
 final class TabBarCoordinator: TabCoordinator {
-    let tabBarController: TabBarController = .init()
     var childCoordinators: [Coordinator] = []
     var navigationController: UINavigationController?
+    let tabBarController: TabBarController = .init()
+    private let dataProvider: DataProviderProtocol
+    
+    init(dataProvider: DataProviderProtocol) {
+        self.dataProvider = dataProvider
+    }
     
     func start() {
         childCoordinators = createViewControllers()
@@ -27,7 +32,7 @@ final class TabBarCoordinator: TabCoordinator {
     }
     
     func startAddCoordinator() {
-        let addCoordinator: AddCoordinator = .init(presentingViewController: tabBarController)
+        let addCoordinator: AddCoordinator = .init(dataProvider: dataProvider, presentingViewController: tabBarController)
         addCoordinator.start()
         addChildCoordinator(addCoordinator)
     }
@@ -36,10 +41,10 @@ final class TabBarCoordinator: TabCoordinator {
 // MARK: - Private methods
 private extension TabBarCoordinator {
     func createViewControllers() -> [Coordinator] {
-        let mainCoordinator: MainCoordinator = .init()
-        let categoriesCoordinator: CategoriesCoordinator = .init()
-        let analyticsCoordinator: AnalyticsCoordinator = .init()
-        let profileCoordinator: ProfileCoordinator = .init()
+        let mainCoordinator: MainCoordinator = .init(dataProvider: dataProvider)
+        let categoriesCoordinator: CategoriesCoordinator = .init(dataProvider: dataProvider)
+        let analyticsCoordinator: AnalyticsCoordinator = .init(dataProvider: dataProvider)
+        let profileCoordinator: ProfileCoordinator = .init(dataProvider: dataProvider)
         
         return [mainCoordinator, categoriesCoordinator, analyticsCoordinator, profileCoordinator]
     }

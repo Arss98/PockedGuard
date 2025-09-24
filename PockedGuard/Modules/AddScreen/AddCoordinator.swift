@@ -14,9 +14,11 @@ final class AddCoordinator: Coordinator {
     
     // MARK: - Private properties
     private weak var presentingViewController: UIViewController?
+    private let dataProvider: DataProviderProtocol
     private let disposeBag: DisposeBag = .init()
     
-    init(presentingViewController: UIViewController?) {
+    init(dataProvider: DataProviderProtocol, presentingViewController: UIViewController?) {
+        self.dataProvider = dataProvider
         self.presentingViewController = presentingViewController
     }
     
@@ -28,7 +30,7 @@ final class AddCoordinator: Coordinator {
 // MARK: - Private methods
 private extension AddCoordinator {
     func showAddScreen() {
-        let viewModel: AddViewModelProtocol = AddViewModel()
+        let viewModel: AddViewModelProtocol = AddViewModel(dataProvider: dataProvider)
         let viewController: AddViewController = .init(viewModel: viewModel)
         
         viewController.modalPresentationStyle = .pageSheet

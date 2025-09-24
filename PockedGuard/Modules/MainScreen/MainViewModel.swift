@@ -11,7 +11,6 @@ import RxCocoa
 protocol MainViewModelProtocol: AnyObject {
     var input: MainViewModel.Input { get }
     var output: MainViewModel.Output { get }
-    func fetchData()
     func handlePeriodSelection(index: Int)
 }
 
@@ -21,31 +20,26 @@ final class MainViewModel: MainViewModelProtocol {
     let output: Output
     
     // MARK: - Private properties
-    private let coreDataService: CoreDataTransactionProtocol
+    private let dataProvider: DataProviderProtocol
     private let disposeBag: DisposeBag = .init()
     
     // MARK: - init
-    init(coreDataService: CoreDataTransactionProtocol = CoreDataService.shared) {
-        self.coreDataService = coreDataService
+    init(dataProvider: DataProviderProtocol) {
+        self.dataProvider = dataProvider
         self.input = .init()
         self.output = .init()
-        setupDefaultTemplatesIfNeeded()
         setupBindings()
+        setupRepositoryBindings()
     }
 }
 
 // MARK: - MainViewModelProtocol
 extension MainViewModel {
-    func fetchData() {
-        fetchAccounts()
-        fetchTransactions()
-    }
-    
     func handlePeriodSelection(index: Int) {
         switch index {
-        case 0: output.period.accept(.day)
-        case 1: output.period.accept(.week)
-        case 2: output.period.accept(.month)
+        case 0: output.period.accept(.day())
+        case 1: output.period.accept(.week())
+        case 2: output.period.accept(.month())
         case 3: input.showDatePickerTrigger.accept(())
         default:
             break
@@ -55,77 +49,45 @@ extension MainViewModel {
 
 // MARK: - Private methods
 private extension MainViewModel {
-    func setupDefaultTemplatesIfNeeded() {
-        if !coreDataService.isFirstLaunch() {
-            coreDataService.createDefaultData()
-                .subscribe(onCompleted: { [weak self] in
-                    self?.coreDataService.markFirstLaunch()
-                }, onError: { [weak self] _ in
-                    self?.output.error.onNext(CustomError.failedToCreateDefaultData)
-                })
-                .disposed(by: disposeBag)
-        }
-    }
-
     func setupBindings() {
-        input.currentTransactionType
-            .subscribe(with: self, onNext: { viewModel, _ in
-                viewModel.fetchData()
-            })
-            .disposed(by: disposeBag)
-        
-        input.selectedAccount
-            .subscribe(with: self, onNext: { viewModel, account in
-                viewModel.fetchTransactions()
-            })
-            .disposed(by: disposeBag)
-        
-        output.period
-            .subscribe(with: self, onNext: { viewModel, _ in
-                viewModel.fetchTransactions()
-            })
-            .disposed(by: disposeBag)
-    }
-    
-    func fetchTransactions() {
-        output.isLoading.accept(true)
-        
-        coreDataService.fetchTransactions(
-            by: input.currentTransactionType.value,
-            periodType: output.period.value,
-            accountId: input.selectedAccount.value?.id,
-            categotyId: nil
+        Observable.combineLatest(
+            input.currentTransactionType,
+            input.selectedAccount,
+            output.period
         )
-        .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
-        .observe(on: MainScheduler.asyncInstance)
-        .subscribe(with: self, onNext: { viewModel, transactions in
-            viewModel.groupTransactions(transactions)
-            viewModel.output.isLoading.accept(false)
-        }, onError: { viewModel, _ in
-            viewModel.output.isLoading.accept(false)
-            viewModel.output.error.onNext(CustomError.failedToFetchTransactions)
-        })
+        .subscribe(with: self) { viewModel, tuple in
+            viewModel.dataProvider.transaction.setFilters(type: tuple.0, accountId: tuple.1?.id, period: tuple.2)
+        }
         .disposed(by: disposeBag)
+        
+        input.nextPeriod
+            .subscribe(with: self, onNext: { viewModel, _ in
+                let currentPeriod = viewModel.output.period.value
+                if !currentPeriod.isFuture {
+                    viewModel.output.period.accept(currentPeriod.next)
+                }
+            })
+            .disposed(by: disposeBag)
+        
+        input.previousPeriod
+            .subscribe(with: self, onNext: { viewModel, _ in
+                let currentPeriod = viewModel.output.period.value
+                viewModel.output.period.accept(currentPeriod.previous)
+            })
+            .disposed(by: disposeBag)
     }
     
-    func fetchAccounts() {
-        output.isLoading.accept(true)
+    func setupRepositoryBindings() {
+        dataProvider.transaction.transactions
+            .subscribe(with: self) { viewModel, transactions in
+                viewModel.groupTransactions(transactions)
+            }
+            .disposed(by: disposeBag)
         
-        coreDataService.fetchAccounts(by: input.currentTransactionType.value)
-            .observe(on: MainScheduler.asyncInstance)
-            .subscribe(with: self, onNext: { viewModel, accounts in
+        dataProvider.accounts.accounts
+            .subscribe(with: self) { viewModel, accounts in
                 viewModel.output.accounts.accept(accounts)
-                
-                if let defaultAccount = accounts.first(
-                    where: {$0.name == .Localized.Common.accountTitle.localized}) {
-                    viewModel.input.selectedAccount.accept(defaultAccount)
-                }
-                
-                viewModel.output.isLoading.accept(false)
-            }, onError: { viewModel, _ in
-                viewModel.output.error.onNext(CustomError.failedToFetchAccounts)
-                viewModel.output.isLoading.accept(false)
-            })
+            }
             .disposed(by: disposeBag)
     }
 
@@ -161,6 +123,8 @@ extension MainViewModel {
         let selectedAccount: BehaviorRelay<AccountDomainModel?> = .init(value: nil)
         let showDatePickerTrigger: PublishRelay<Void> = .init()
         let currentTransactionType: BehaviorRelay<TransactionType?> = .init(value: nil)
+        let nextPeriod: PublishRelay<Void> = .init()
+        let previousPeriod: PublishRelay<Void> = .init()
     }
     
     struct Output {
@@ -168,37 +132,9 @@ extension MainViewModel {
         let segmentsDiagram: BehaviorRelay<[SegmentDataModel]> = .init(value: [])
         let sections: BehaviorRelay<[TransactionSection]> = .init(value: [])
         let accounts: BehaviorRelay<[AccountDomainModel]> = .init(value: [])
-        let period: BehaviorRelay<PeriodType> = .init(value: .day)
+        let period: BehaviorRelay<PeriodType> = .init(value: .day())
         let error: PublishSubject<Error> = .init()
         let isLoading: BehaviorRelay<Bool> = .init(value: false)
-    }
-}
-
-// MARK: - PeriodType
-enum PeriodType {
-    case day, week, month
-    case custom(start: Date, end: Date)
-    
-    var description: String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "ru_RU")
-        
-        switch self {
-        case .day:
-            return .Localized.Common.today.localized
-        case .week:
-            formatter.dateFormat = "dd.MM.yyyy"
-            let start = Date.currentWeekDates().start
-            let end = Date.currentWeekDates().end
-            return "\(formatter.string(from: start)) - \(formatter.string(from: end))"
-        case .month:
-            formatter.dateFormat = "MMMM"
-            formatter.monthSymbols = Constants.monthSymbols
-            return formatter.string(from: Date())
-        case .custom(let start, let end):
-            formatter.dateFormat = "dd.MM.yyyy"
-            return "\(formatter.string(from: start)) - \(formatter.string(from: end))"
-        }
     }
 }
 
@@ -218,22 +154,4 @@ private enum CustomError: Error, LocalizedError  {
             return .Localized.Error.accountFetchFailed.localized
         }
     }
-}
-
-// MARK: - Constants
-private enum Constants {
-    static let monthSymbols: [String] = [
-        .Localized.Month.january.localized,
-        .Localized.Month.february.localized,
-        .Localized.Month.march.localized,
-        .Localized.Month.april.localized,
-        .Localized.Month.may.localized,
-        .Localized.Month.june.localized,
-        .Localized.Month.july.localized,
-        .Localized.Month.august.localized,
-        .Localized.Month.september.localized,
-        .Localized.Month.october.localized,
-        .Localized.Month.november.localized,
-        .Localized.Month.december.localized
-    ]
 }

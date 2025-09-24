@@ -52,9 +52,9 @@ final class AccountViewCell: UICollectionViewCell {
     }
     
     // MARK: - Configure
-    func configure(title: String, amount: Double) {
+    func configure(title: String, amount: Double, currency: CurrencyType) {
         titleLabel.text = title
-        amountLabel.text = "\(Int(amount)) ₽"
+        amountLabel.text = "\(Int(amount)) \(currency.symbol)"
     }
 }
 

@@ -23,6 +23,7 @@ extension String {
             case today
             case period
             case cancel
+            case resume
             case done
             case edit
             case delete
@@ -31,7 +32,14 @@ extension String {
             case expenses
             case accountTitle
             case total
-            case transactionsEmptyLabel 
+            case transactionsEmptyLabel
+            case categoriesTitle
+            case categoryLabelTitle
+            case templatesLabelTitle
+            case accountLabelTitle
+            case RUB
+            case USD
+            case EUR
         }
         
         enum Month {
@@ -56,6 +64,7 @@ extension String {
         enum Notification {
             case title
             case createTitle
+            case edit
             case reminderTitle
             case titlePlaceholder
             case textPlaceholder
@@ -74,9 +83,20 @@ extension String {
             case amountPlaceholder
             case descriptionPlaceholder
             case templatesTitle
-            case categoryTitle
             case templatesInfo
-            case categoryNotSelectedError
+            case templatesIsEmptyLabel
+            case addCategory
+            case editCategory
+            case addAccount
+            case editAccount
+            case addTemplate
+            case editTemplate
+            case accountNameLabel
+            case accountNamePlaceholder
+            case accountCurrencyType
+            case categoryNameLabel
+            case categoryNamePlaceholder
+            case colorCategoryTitle
         }
         
         enum TransactionCategories {
@@ -113,7 +133,14 @@ extension String {
             case transactionFetchFailed
             case accountFetchFailed
             case dataFetchFailed
-
+            case insufficientFunds
+            case categoryNotSelectedError
+            case invalidNameAccount
+        }
+        
+        enum Alert {
+            case systemCategoryTitle
+            case systemCategoryMessage
         }
     }
 }
@@ -125,6 +152,7 @@ extension String.Localized.Common: Localizable {
         case .today: return "Today"
         case .period: return "Period"
         case .cancel: return "Cancel"
+        case .resume: return "Continue"
         case .done: return "Done"
         case .edit: return "Edit"
         case .delete: return "Delete"
@@ -134,6 +162,13 @@ extension String.Localized.Common: Localizable {
         case .accountTitle: return "DefaultAccountTitle"
         case .total: return "Total"
         case .transactionsEmptyLabel: return "Transaction.EmptyLabel"
+        case .categoriesTitle: return "Categories.Title"
+        case .categoryLabelTitle: return "Categories.CategoryLabelTitle"
+        case .templatesLabelTitle: return "Categories.TemplatesLabelTitle"
+        case .accountLabelTitle: return "Categories.AccountLabelTitle"
+        case .RUB: return "Currency.RUB"
+        case .USD: return "Currency.USD"
+        case .EUR: return "Currency.EUR"
         }
     }
 }
@@ -175,6 +210,7 @@ extension String.Localized.Notification: Localizable {
         switch self {
         case .title: return "NotificationScreen.Title"
         case .createTitle: return "NotificationScreen.Create.Title"
+        case .edit: return "NotificationScreen.Edit.Title"
         case .reminderTitle: return "NotificationScreen.ReminderTitle"
         case .titlePlaceholder: return "NotificationScreen.TitlePlaceholder"
         case .textPlaceholder: return "NotificationScreen.TextPlaceholder"
@@ -198,9 +234,20 @@ extension String.Localized.Add: Localizable {
         case .amountPlaceholder: return "AddScreen.AmountPlaceholder"
         case .descriptionPlaceholder: return "AddScreen.DescriptionPlaceholder"
         case .templatesTitle: return "AddScreen.TemplatesLabelTitle"
-        case .categoryTitle: return "AddScreen.CategoryLabelTitle"
         case .templatesInfo: return "AddScreen.TemplatesInfoLabel"
-        case .categoryNotSelectedError: return "AddScreen.CategoryNotSelectedError"
+        case .templatesIsEmptyLabel: return "AddScreen.TemplatesIsEmptyLabel"
+        case .addCategory: return "Add.Category"
+        case .editCategory: return "Add.EditCategory"
+        case .addAccount: return "Add.Account"
+        case .editAccount: return "Add.EditAccount"
+        case .addTemplate: return "Add.Template"
+        case .editTemplate: return "Add.EditTemplate"
+        case .accountNameLabel: return  "Add.AccountNameLabel"
+        case .accountNamePlaceholder: return "Add.AccountNamePlaceholder"
+        case .accountCurrencyType: return "Add.CurrencyType"
+        case .categoryNameLabel: return "Add.CategoryNameLabel"
+        case .categoryNamePlaceholder: return "Add.CategoryNamePlaceholder"
+        case .colorCategoryTitle: return "Add.ColorCategoryTitle"
         }
     }
 }
@@ -252,6 +299,19 @@ extension String.Localized.Error: Localizable {
         case .transactionFetchFailed: return "Error.TransactionFetchFailed"
         case .accountFetchFailed: return "Error.AccountFetchFailed"
         case .dataFetchFailed: return "Error.DataFetchFailed"
+        case .insufficientFunds: return "Error.InsufficientFunds"
+        case .categoryNotSelectedError: return "AddScreen.CategoryNotSelectedError"
+        case .invalidNameAccount: return "AddScreen.InvalidNameAccount"
+        }
+    }
+}
+
+// MARK: - Alert
+extension String.Localized.Alert: Localizable {
+    var key: String {
+        switch self {
+        case .systemCategoryTitle: "Alert.SystemCategoryTitle"
+        case .systemCategoryMessage: "Alert.systemCategoryMessage"
         }
     }
 }

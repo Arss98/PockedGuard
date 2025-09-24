@@ -19,38 +19,33 @@ struct CircleDiagramView: View {
     
     var body: some View {
         ZStack {
-            diagramWithControls
+            diagram
             summaryInfo
         }
         .foregroundStyle(.white)
     }
 }
-
+//"chevron.left"
+//"chevron.right"
 // MARK: - Computed property
 private extension CircleDiagramView {
-    var diagramWithControls: some View {
-        HStack {
-            navigationButton(icon: "chevron.left")
-            
-            GeometryReader { geometry in
-                ZStack {
-                    if totalValue == .zero || segments.isEmpty {
-                        emptyDiagram(in: geometry)
-                    } else {
-                        segmentsLayer(in: geometry)
-                    }
+    var diagram: some View {
+        GeometryReader { geometry in
+            ZStack {
+                if totalValue == .zero || segments.isEmpty {
+                    emptyDiagram(in: geometry)
+                } else {
+                    segmentsLayer(in: geometry)
                 }
-                .shadow(
-                    color: Color(.black).opacity(Constants.shadowOpacity),
-                    radius: Constants.shadowRadius
-                )
             }
-            .aspectRatio(1, contentMode: .fit)
-            .background(.appCardAndField)
-            .cornerRadius(.infinity)
-            
-            navigationButton(icon: "chevron.right")
+            .shadow(
+                color: Color(.black).opacity(Constants.shadowOpacity),
+                radius: Constants.shadowRadius
+            )
         }
+        .aspectRatio(1, contentMode: .fit)
+        .background(.appCardAndField)
+        .cornerRadius(.infinity)
     }
     
     var summaryInfo: some View {
@@ -78,15 +73,6 @@ private extension CircleDiagramView {
 
 // MARK: - Private methods
 private extension CircleDiagramView {
-    func navigationButton(icon: String) -> some View {
-        Button(action: {}) {
-            Image(systemName: icon)
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(width: Constants.buttonSize, height: Constants.buttonSize)
-        }
-    }
-    
     func emptyDiagram(in geometry: GeometryProxy) -> some View {
         let radius = calculateRadius(for: geometry)
         return Circle()

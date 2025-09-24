@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import RxSwift
 
 protocol Coordinator: AnyObject {
     var childCoordinators: [Coordinator] { get set }
@@ -27,21 +28,25 @@ final class AppCoordinator: Coordinator {
     var childCoordinators: [Coordinator] = []
     var navigationController: UINavigationController? { nil }
     private let window: UIWindow
+    private let coreDataService: CoreDataServiceProtocol
+    private let dataProvider: DataProviderProtocol
+    private let disposeBag: DisposeBag = .init()
     
     init(window: UIWindow) {
         self.window = window
+        self.coreDataService = CoreDataService()
+        self.dataProvider = DataProvider(coreDataService: coreDataService)
     }
     
     func start() {
         startMainFlow()
     }
-    
 }
 
-// Private methods
+// MARK: - Private methods
 private extension AppCoordinator {
     func startMainFlow() {
-        let tabBarCoordinator: TabBarCoordinator = .init()
+        let tabBarCoordinator: TabBarCoordinator = .init(dataProvider: dataProvider)
         addChildCoordinator(tabBarCoordinator)
         tabBarCoordinator.start()
         

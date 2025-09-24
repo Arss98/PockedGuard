@@ -31,7 +31,9 @@ extension Transaction {
 
 }
 
-extension Transaction {
+extension Transaction: DomainConvertible {
+    typealias DomainModel = TransactionDomainModel
+    
     func toDomain() -> TransactionDomainModel {
         TransactionDomainModel(
             id: id ?? UUID(),

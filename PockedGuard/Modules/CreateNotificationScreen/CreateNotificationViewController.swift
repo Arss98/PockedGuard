@@ -158,6 +158,8 @@ private extension CreateNotificationViewController {
             timePicker.date = viewModel.input.date.value
             datePicker.date = viewModel.input.date.value
             periodButton.setTitle(viewModel.input.reminderType.value.localizedTitle, for: .normal)
+            
+            title = .Localized.Notification.edit.localized
         }
     }
     
@@ -186,11 +188,11 @@ private extension CreateNotificationViewController {
             .disposed(by: disposeBag)
         
         periodButton.rx.tap
-            .flatMapLatest { [weak self] _ -> Observable<ReminderType> in
+            .flatMapLatest { [weak self] _ -> Observable<ReminderType?> in
                 guard let self else { return .empty() }
-                return self.showSelectionSheet()
-                    .compactMap { $0 }
+                return self.showSelectionSheet(localizedTitleProvider: { $0.localizedTitle })
             }
+            .compactMap { $0 }
             .observe(on: MainScheduler.instance)
             .subscribe(onNext: { [weak self] type in
                 guard let self else { return }

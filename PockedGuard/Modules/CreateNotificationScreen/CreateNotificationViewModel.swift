@@ -22,9 +22,8 @@ final class CreateNotificationViewModel: CreateNotificationViewModelProtocol {
     
     // MARK: - Private properties
     private let combainedDateTime: BehaviorRelay<Date> = .init(value: Date())
-    private let coreDataService: CoreDataNotificationProtocol
+    private let dataProvider: DataProviderProtocol
     private let notificationScheduler: NotificationSchedulerProtocol
-    private var notificationToEdit: NotificationDomainModel?
     private let disposeBag: DisposeBag = .init()
     
     enum Mode {
@@ -35,10 +34,10 @@ final class CreateNotificationViewModel: CreateNotificationViewModelProtocol {
     // MARK: - Init
     init(
         mode: Mode,
-        coreDataService: CoreDataNotificationProtocol = CoreDataService.shared,
+        dataProvider: DataProviderProtocol ,
         notificationScheduler: NotificationSchedulerProtocol = NotificationScheduler()
     ) {
-        self.coreDataService = coreDataService
+        self.dataProvider = dataProvider
         self.notificationScheduler = notificationScheduler
         self.mode = mode
         self.input = .init()
@@ -71,7 +70,6 @@ private extension CreateNotificationViewModel {
     
     func setInitialValues() {
         if case .edit(let notification) = mode {
-            self.notificationToEdit = notification
             input.title.accept(notification.title)
             input.notes.accept(notification.notes)
             input.date.accept(notification.date)
@@ -125,7 +123,7 @@ private extension CreateNotificationViewModel {
             reminderType: input.reminderType.value
         )
         
-        return coreDataService.addNotification(notification)
+        return dataProvider.notifications.createNotification(notification)
             .andThen(Completable.create { [weak self] completable in
                 guard let self else { return Disposables.create() }
                 do {
@@ -146,7 +144,7 @@ private extension CreateNotificationViewModel {
     }
     
     func updateNotification(notification: NotificationDomainModel) -> Completable {
-        coreDataService.updateNotification(
+        dataProvider.notifications.updateNotification(
             id: notification.id,
             newTitle: input.title.value,
             newNotes: input.notes.value,

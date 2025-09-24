@@ -28,7 +28,9 @@ extension NotificationModel {
 
 }
 
-extension NotificationModel {
+extension NotificationModel: DomainConvertible {
+    typealias DomainModel = NotificationDomainModel
+    
     func toDomain() -> NotificationDomainModel {
         NotificationDomainModel(
             id: id ?? UUID(),

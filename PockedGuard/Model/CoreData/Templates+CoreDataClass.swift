@@ -28,13 +28,15 @@ extension Templates {
 
 }
 
-extension Templates {
-    func toDomain() -> TemplatesDomainModel {
-        TemplatesDomainModel(
+extension Templates: DomainConvertible {
+    typealias DomainModel = TemplateDomainModel
+    
+    func toDomain() -> TemplateDomainModel {
+        TemplateDomainModel(
             id: id ?? UUID(),
             icon: icon ?? "",
             amount: amount,
-            type: TransactionType(rawValue: type),
+            type: TransactionType(rawValue: type) ?? TransactionType.income,
             category: category?.toDomain()
         )
     }

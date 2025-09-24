@@ -9,6 +9,7 @@
 /* Common */
 "Today" = "Сегодня";
 "Cancel" = "Отмена";
+"Continue" = "Продолжить";
 "Done" = "Готово";
 "Edit" = "Редактировать";
 "Delete" = "Удалить";
@@ -18,6 +19,13 @@
 "DefaultAccountTitle" = "Основной счет";
 "Total" = "Итого";
 "Transaction.EmptyLabel" = "Операции за выбранный период не найдены";
+"Categories.Title" = "Категории и шаблоны";
+"Categories.CategoryLabelTitle" = "Категории";
+"Categories.TemplatesLabelTitle" = "Шаблоны";
+"Categories.AccountLabelTitle" = "Счета";
+"Currency.RUB" = "RUB";
+"Currency.USD" = "USD";
+"Currency.EUR" = "EUR";
 
 /* Month*/
 "Month.January" = "Январь";
@@ -42,6 +50,7 @@
 /* Notification Screen */
 "NotificationScreen.Title" = "Напоминания";
 "NotificationScreen.Create.Title" = "Создать напоминание";
+"NotificationScreen.Edit.Title" = "Редактировать";
 "NotificationScreen.ReminderTitle" = "Заголовок";
 "NotificationScreen.TitlePlaceholder" = "Заголовок напоминания";
 "NotificationScreen.TextPlaceholder" = "Текст напоминания";
@@ -56,12 +65,25 @@
 "NotificationScreen.EmptyLabel" = "Ваш список напоминаний пуст. Добавьте новые напоминания, чтобы ничего не забыть!";
 
 /*Add Screen*/
-"AddScreen.AmountPlaceholder" = "0 ₽";
+"AddScreen.AmountPlaceholder" = "0";
 "AddScreen.DescriptionPlaceholder" = "Комментарий...";
 "AddScreen.TemplatesLabelTitle" = "Шаблоны операций";
-"AddScreen.CategoryLabelTitle" = "Категории";
 "AddScreen.TemplatesInfoLabel" = "Шаблоны — это готовые повторяющиеся операции";
-"AddScreen.CategoryNotSelectedError" = "Пожалуйста, выберите категорию.";
+"AddScreen.TemplatesIsEmptyLabel" = "Список шаблонов пуст. Добавьте новые шаблоны, чтобы упросить добавление регулярных операций.";
+
+/* Add Categories, Accounts */
+"Add.Category" = "Добавить категорию";
+"Add.EditCategory" = "Редактировать категорию";
+"Add.Account" = "Добавить счет";
+"Add.EditAccount" = "Редактировать счет";
+"Add.Template" = "Добавить шаблон";
+"Add.EditTemplate" = "Редактировать шаблон";
+"Add.AccountNameLabel" = "Название счета";
+"Add.AccountNamePlaceholder" = "Введите название счета";
+"Add.CurrencyType" = "Тип валюты";
+"Add.CategoryNameLabel" = "Название категории";
+"Add.CategoryNamePlaceholder" = "Введите название категории";
+"Add.ColorCategoryTitle" = "Цвет категории";
 
 /*Transaction categories*/
 "TransactionCategories.Health" = "Здоровье";
@@ -95,4 +117,10 @@
 "Error.TransactionFetchFailed" = "Произошла ошибка при загрузке данных об операциях.";
 "Error.AccountFetchFailed" = "Произошла ошибка при загрузке данных об счетах.";
 "Error.DataFetchFailed" = "Произошла ошибка при загрузке данных.";
+"Error.InsufficientFunds" = "Недостаточно средств на счете";
+"Error.CategoryNotSelectedError" = "Пожалуйста, выберите категорию.";
+"Error.InvalidNameAccount" = "Необходимо ввести название счета";
 
+/* Alerts */
+"Alert.SystemCategoryTitle" = "Системная категория";
+"Alert.systemCategoryMessage" = "Категория \"%@\" является системной. Вы уверены, что хотите %@ эту категорию?";

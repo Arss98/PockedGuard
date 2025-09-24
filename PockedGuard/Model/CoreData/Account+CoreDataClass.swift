@@ -15,7 +15,6 @@ public class Account: NSManagedObject {
 }
 
 extension Account {
-    
     @nonobjc public class func fetchRequest() -> NSFetchRequest<Account> {
         return NSFetchRequest<Account>(entityName: "Account")
     }
@@ -24,7 +23,7 @@ extension Account {
     @NSManaged public var currency: String?
     @NSManaged public var id: UUID?
     @NSManaged public var name: String?
-    @NSManaged public var type: Int16
+    @NSManaged public var date: Date?
     @NSManaged public var transaction: NSSet?
     
 }
@@ -46,25 +45,16 @@ extension Account {
     
 }
 
-extension Account {
+extension Account: DomainConvertible {
+    typealias DomainModel = AccountDomainModel
+    
     func toDomain() -> AccountDomainModel {
         AccountDomainModel(
             id: id ?? UUID(),
             name: name ?? "",
             balance: balance,
-            type: AccountType(rawValue: type) ?? AccountType.debitCard,
-            currency: Currency(rawValue: currency ?? "") ?? Currency.rub
+            currency: CurrencyType(rawValue: currency ?? "") ?? CurrencyType.rub
         )
-    }
-    
-    static func fromDomain(_ domainModel: AccountDomainModel, context: NSManagedObjectContext) -> Account {
-        let account = Account(context: context)
-        account.id = domainModel.id
-        account.name = domainModel.name
-        account.balance = domainModel.balance
-        account.type = domainModel.type.rawValue
-        account.currency = domainModel.currency.rawValue
-        return account
     }
 }
 

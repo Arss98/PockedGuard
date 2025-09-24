@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct NotificationDomainModel {
+struct NotificationDomainModel: Hashable {
     let id: UUID
     let title: String
     let notes: String

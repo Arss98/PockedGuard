@@ -14,13 +14,13 @@ final class MainViewController: BaseViewController {
     private lazy var financeSegmentedControl: CustomSegmentedControl = .init(items: Constants.SegmentedControl.financeItems)
     private lazy var periodSegmentedControl: CustomSegmentedControl = .init(items: Constants.SegmentedControl.periodItems)
     
-    private lazy var accountsCollection: UICollectionView = {
+    private lazy var accountsCollectionView: UICollectionView = {
         let layout: UICollectionViewFlowLayout = .init()
         layout.scrollDirection = .horizontal
-        layout.minimumInteritemSpacing = Constants.Layout.financeCardsCollectionSpacing
+        layout.minimumInteritemSpacing = Constants.Layout.accountsCollectionSpacing
         layout.estimatedItemSize = CGSize(
-            width: Constants.Layout.financeCardsCellWidth,
-            height: Constants.Layout.financeCardsCellHeight
+            width: Constants.Layout.accountsCellWidth,
+            height: Constants.Layout.accountsCellHeight
         )
         
         layout.itemSize = UICollectionViewFlowLayout.automaticSize
@@ -41,6 +41,26 @@ final class MainViewController: BaseViewController {
         hostingController.view.translatesAutoresizingMaskIntoConstraints = false
         hostingController.view.backgroundColor = .clear
         return hostingController
+    }()
+    
+    private lazy var previousPeriodButton: UIButton = {
+        let button: UIButton = .init(type: .custom)
+        let image: UIImage? = .init(systemName: "chevron.left")
+        let configuration: UIImage.SymbolConfiguration = .init(pointSize: Constants.Layout.periodButtonSize)
+        button.setImage(image?.withConfiguration(configuration), for: .normal)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.tintColor = .white
+        return button
+    }()
+    
+    private lazy var nextPeriodButton: UIButton = {
+        let button: UIButton = .init(type: .custom)
+        let image: UIImage? = .init(systemName: "chevron.right")
+        let configuration: UIImage.SymbolConfiguration = .init(pointSize: Constants.Layout.periodButtonSize)
+        button.setImage(image?.withConfiguration(configuration), for: .normal)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.tintColor = .white
+        return button
     }()
     
     private lazy var periodLabel: UILabel = {
@@ -113,15 +133,14 @@ final class MainViewController: BaseViewController {
         transactionTableView.heightAnchor.constraint(equalTo: transactionsBackgroundView.heightAnchor, multiplier: Constants.Layout.multiplier)
     }()
     
-    // MARK: - Swipe Gesture Properties
+    // MARK: - Properties
     var viewModel: MainViewModelProtocol
     
     private var isExpanded = false
-    private var heightConstraint: NSLayoutConstraint!
     private var sections: [TransactionSection] = []
     
     // MARK: - Init
-    init(viewModel: MainViewModelProtocol = MainViewModel()) {
+    init(viewModel: MainViewModelProtocol) {
         self.viewModel = viewModel
         super.init(nibName: nil, bundle: nil)
     }
@@ -173,7 +192,15 @@ private extension MainViewController {
             }
             .disposed(by: disposeBag)
         
-        accountsCollection.rx.modelSelected(AccountDomainModel.self)
+        previousPeriodButton.rx.tap
+            .bind(to: viewModel.input.previousPeriod)
+            .disposed(by: disposeBag)
+        
+        nextPeriodButton.rx.tap
+            .bind(to: viewModel.input.nextPeriod)
+            .disposed(by: disposeBag)
+        
+        accountsCollectionView.rx.modelSelected(AccountDomainModel.self)
             .bind(to: viewModel.input.selectedAccount)
             .disposed(by: disposeBag)
         
@@ -185,12 +212,6 @@ private extension MainViewController {
             }
             .subscribe(with: self) { controller, dates in
                 controller.viewModel.output.period.accept(.custom(start: dates.0, end: dates.1))
-            }
-            .disposed(by: disposeBag)
-        
-        DataUpdateService.shared.modalDismissedSubject
-            .subscribe(with: self) { controller, _ in
-                controller.viewModel.fetchData()
             }
             .disposed(by: disposeBag)
     }
@@ -213,11 +234,11 @@ private extension MainViewController {
         
         viewModel.output.accounts
             .asDriver(onErrorJustReturn: [])
-            .drive(accountsCollection.rx.items(
+            .drive(accountsCollectionView.rx.items(
                 cellIdentifier: String(describing: AccountViewCell.self),
                 cellType: AccountViewCell.self
             )) { _, model, cell in
-                cell.configure(title: model.name, amount: model.balance)
+                cell.configure(title: model.name, amount: model.balance, currency: model.currency)
             }
             .disposed(by: disposeBag)
         
@@ -225,6 +246,12 @@ private extension MainViewController {
             .observe(on: MainScheduler.asyncInstance)
             .subscribe(with: self) { controller, period in
                 controller.periodLabel.text = period.description
+                
+                if case .custom = period {
+                    controller.setPeriodButtonsVisibility(false)
+                } else {
+                    controller.setPeriodButtonsVisibility(true)
+                }
             }
             .disposed(by: disposeBag)
         
@@ -279,7 +306,7 @@ extension MainViewController: UITableViewDelegate, UITableViewDataSource {
         header.configure(
             categoryName: sections[section].categoryName,
             percentage: sections[section].percentage,
-            amount: sections[section].transactions.reduce(0) { $0 + $1.amount },
+            amount: sections[section].transactions.reduce(.zero) { $0 + $1.amount },
             color: sections[section].transactions.first?.category?.color
         )
         
@@ -293,7 +320,8 @@ private extension MainViewController {
         navigationItem.titleView = financeSegmentedControl
         
         addChild(circleDiagramView)
-        [accountsCollection, circleDiagramView.view, periodLabel, periodSegmentedControl, transactionsBackgroundView].forEach { view.addSubview($0) }
+        [accountsCollectionView, circleDiagramView.view, previousPeriodButton, nextPeriodButton, periodLabel,
+         periodSegmentedControl, transactionsBackgroundView].forEach { view.addSubview($0) }
         circleDiagramView.didMove(toParent: self)
         
         [dragHandleView, transactionTableView, noTransactionLabel].forEach { transactionsBackgroundView.addSubview($0) }
@@ -306,18 +334,37 @@ private extension MainViewController {
         navigationController?.setNavigationBarHidden(isHidden, animated: true)
     }
     
+    func setPeriodButtonsVisibility(_ isVisible: Bool) {
+        UIView.animate(withDuration: Constants.Animation.duration) {
+            self.previousPeriodButton.alpha = isVisible ? 1 : 0
+            self.nextPeriodButton.alpha = isVisible ? 1 : 0
+        }
+    }
+    
     func setConstraints() {
         NSLayoutConstraint.activate([
-            accountsCollection.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: Constants.Layout.defaultPadding),
-            accountsCollection.leadingAnchor.constraint(equalTo: view.leadingAnchor,
+            accountsCollectionView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: Constants.Layout.defaultPadding),
+            accountsCollectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor,
                                                         constant: Constants.Layout.defaultPadding),
-            accountsCollection.trailingAnchor.constraint(equalTo: view.trailingAnchor,
+            accountsCollectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor,
                                                          constant: -Constants.Layout.defaultPadding),
-            accountsCollection.heightAnchor.constraint(equalToConstant: Constants.Layout.financeCardsCellHeight),
+            accountsCollectionView.heightAnchor.constraint(equalToConstant: Constants.Layout.accountsCellHeight),
             
-            circleDiagramView.view.topAnchor.constraint(equalTo: accountsCollection.bottomAnchor, constant: Constants.Layout.defaultVerticalPadding),
-            circleDiagramView.view.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.Layout.circleDiagramViewPadding),
-            circleDiagramView.view.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.Layout.circleDiagramViewPadding),
+            previousPeriodButton.centerYAnchor.constraint(equalTo: circleDiagramView.view.centerYAnchor),
+            previousPeriodButton.leadingAnchor.constraint(equalTo: view.leadingAnchor,
+                                                       constant: Constants.Layout.defaultPadding / 2),
+            previousPeriodButton.widthAnchor.constraint(equalToConstant: Constants.Layout.periodButtonSize),
+            
+            circleDiagramView.view.topAnchor.constraint(equalTo: accountsCollectionView.bottomAnchor, constant: Constants.Layout.defaultVerticalPadding),
+            circleDiagramView.view.leadingAnchor.constraint(equalTo: previousPeriodButton.trailingAnchor,
+                                                        constant: Constants.Layout.defaultPadding / 2),
+            circleDiagramView.view.trailingAnchor.constraint(equalTo: nextPeriodButton.leadingAnchor,
+                                                        constant: -Constants.Layout.defaultPadding / 2),
+            
+            nextPeriodButton.centerYAnchor.constraint(equalTo: circleDiagramView.view.centerYAnchor),
+            nextPeriodButton.trailingAnchor.constraint(equalTo: view.trailingAnchor,
+                                                         constant: -Constants.Layout.defaultPadding / 2),
+            nextPeriodButton.widthAnchor.constraint(equalToConstant: Constants.Layout.periodButtonSize),
             
             periodLabel.topAnchor.constraint(equalTo: circleDiagramView.view.bottomAnchor, constant: Constants.Layout.defaultVerticalPadding),
             periodLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
@@ -417,7 +464,7 @@ private extension MainViewController {
         topConstraintPeriodSegmentedControl.isActive = true
         tableViewHeightConstraint.isActive = true
         
-        accountsCollection.alpha = alphas.accounts
+        accountsCollectionView.alpha = alphas.accounts
         circleDiagramView.view.alpha = alphas.diagram
         periodLabel.alpha = alphas.label
         
@@ -430,10 +477,9 @@ private enum Constants {
     enum Layout {
         static let defaultPadding: CGFloat = 16
         static let defaultVerticalPadding: CGFloat = 20
-        static let circleDiagramViewPadding: CGFloat = 10
-        static let financeCardsCellHeight: CGFloat = 60
-        static let financeCardsCellWidth: CGFloat = 160
-        static let financeCardsCollectionSpacing: CGFloat = 8
+        static let accountsCellHeight: CGFloat = 60
+        static let accountsCellWidth: CGFloat = 160
+        static let accountsCollectionSpacing: CGFloat = 8
         static let dragHandleWidth: CGFloat = 40
         static let dragHandleHeight: CGFloat = 5
         static let dragHandlePadding: CGFloat = 10
@@ -442,10 +488,11 @@ private enum Constants {
         static let transactionsBackgroundShadowOpacity: Float = 0.4
         static let transactionsBackgroundShadowOffset = CGSize(width: 0, height: -4)
         static let multiplier: CGFloat = 0.95
+        static let periodButtonSize: CGFloat = 44
     }
     
     enum Animation {
-        static let duration: TimeInterval = 0.4
+        static let duration: TimeInterval = 0.3
     }
     
     enum Text {

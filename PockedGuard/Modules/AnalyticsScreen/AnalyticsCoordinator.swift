@@ -9,7 +9,13 @@ import UIKit
 
 final class AnalyticsCoordinator: Coordinator {
     var childCoordinators: [Coordinator] = []
-    var navigationController: UINavigationController? { nil }
+    var navigationController: UINavigationController?
+    private let dataProvider: DataProviderProtocol
+    
+    init(dataProvider: DataProviderProtocol) {
+        self.dataProvider = dataProvider
+        self.navigationController = .init()
+    }
     
     func start() {
         showAnalyticsScreen()

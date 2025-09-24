@@ -11,8 +11,10 @@ final class MainCoordinator: Coordinator {
     var childCoordinators: [Coordinator] = []
     var navigationController: UINavigationController?
     private let disposeBag: DisposeBag = .init()
+    private let dataProvider: DataProviderProtocol
     
-    init() {
+    init(dataProvider: DataProviderProtocol) {
+        self.dataProvider = dataProvider
         self.navigationController = .init()
     }
     
@@ -24,7 +26,7 @@ final class MainCoordinator: Coordinator {
 // MARK: - Private methods
 private extension MainCoordinator {
     func showMainScreen() {
-        let viewModel: MainViewModelProtocol = MainViewModel()
+        let viewModel: MainViewModelProtocol = MainViewModel(dataProvider: dataProvider)
         let viewController: MainViewController = .init(viewModel: viewModel)
         
         viewModel.output.showNotification
@@ -37,7 +39,7 @@ private extension MainCoordinator {
     }
     
     func showNotificationScreen() {
-        let viewModel: NotificationViewModelProtocol = NotificationViewModel()
+        let viewModel: NotificationViewModelProtocol = NotificationViewModel(dataProvider: dataProvider)
         let viewController: NotificationViewController = .init(viewModel: viewModel)
         
         viewModel.input.createNotificationTapped
@@ -56,7 +58,7 @@ private extension MainCoordinator {
     }
     
     func showCreateNotificationScreen(mode: CreateNotificationViewModel.Mode) {
-        let viewModel: CreateNotificationViewModelProtocol = CreateNotificationViewModel(mode: mode)
+        let viewModel: CreateNotificationViewModelProtocol = CreateNotificationViewModel(mode: mode, dataProvider: dataProvider)
         let viewController: CreateNotificationViewController = .init(viewModel: viewModel)
         
         viewModel.output.didFinish

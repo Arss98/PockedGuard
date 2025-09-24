@@ -148,7 +148,10 @@ extension BaseViewController {
         }
     }
     
-    func showSelectionSheet(title: String? = nil) -> Observable<ReminderType?> {
+    func showSelectionSheet<T: CaseIterable & RawRepresentable>(
+        title: String? = nil,
+        localizedTitleProvider: @escaping (T) -> String
+    ) -> Observable<T?> {
         return Observable.create { [weak self] observer in
             guard let self else {
                 observer.on(.completed)
@@ -158,20 +161,18 @@ extension BaseViewController {
             let sheet: UIAlertController = .init(title: title, message: nil, preferredStyle: .actionSheet)
             sheet.overrideUserInterfaceStyle = .dark
             
-            ReminderType.allCases.forEach { type in
-                let action: UIAlertAction = .init(title: type.localizedTitle, style: .default) { _ in
+            T.allCases.forEach { type in
+                let action: UIAlertAction = .init(title: localizedTitleProvider(type), style: .default) { _ in
                     observer.on(.next(type))
                     observer.on(.completed)
                 }
                 sheet.addAction(action)
             }
             
-            let cancelAction: UIAlertAction = .init(
-                title: .Localized.Common.cancel.localized,
-                style: .cancel) { _ in
-                    observer.on(.next(nil))
-                    observer.on(.completed)
-                }
+            let cancelAction: UIAlertAction = .init(title: .Localized.Common.cancel.localized, style: .cancel) { _ in
+                observer.on(.next(nil))
+                observer.on(.completed)
+            }
             
             sheet.addAction(cancelAction)
             self.present(sheet, animated: true)
@@ -179,22 +180,6 @@ extension BaseViewController {
             return Disposables.create {
                 sheet.dismiss(animated: true)
             }
-        }
-    }
-}
-
-enum ReminderType: Int16, CaseIterable {
-    case once = 0
-    case everyDay = 1
-    case everyWeek = 2
-    case everyMonth = 3
-    
-    var localizedTitle: String {
-        switch self {
-        case .once: return String.Localized.Notification.once.localized
-        case .everyDay: return String.Localized.Notification.everyDay.localized
-        case .everyWeek: return String.Localized.Notification.everyWeek.localized
-        case .everyMonth: return String.Localized.Notification.everyMonth.localized
         }
     }
 }

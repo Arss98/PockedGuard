@@ -47,25 +47,17 @@ extension Category {
 
 }
 
-extension Category {
+extension Category: DomainConvertible {
+    typealias DomainModel = CategoryDomainModel
+    
     func toDomain() -> CategoryDomainModel {
-        CategoryDomainModel(
+        return CategoryDomainModel(
             id: id ?? UUID(),
             name: name ?? "",
             color: color ?? "",
             isSystem: isSystem,
             type: TransactionType(rawValue: type) ?? TransactionType.income
         )
-    }
-    
-    static func fromDomain(_ domainModel: CategoryDomainModel, context: NSManagedObjectContext) -> Category {
-        let category = Category(context: context)
-        category.id = domainModel.id
-        category.name = domainModel.name
-        category.color = domainModel.color
-        category.isSystem = domainModel.isSystem
-        category.type = domainModel.type.rawValue
-        return category
     }
 }
 

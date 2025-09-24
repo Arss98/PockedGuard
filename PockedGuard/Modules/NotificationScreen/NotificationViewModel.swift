@@ -11,7 +11,6 @@ import RxCocoa
 protocol NotificationViewModelProtocol {
     var input: NotificationViewModel.Input { get }
     var output: NotificationViewModel.Output { get }
-    func fetchNotifications()
     func getNotification(at indexPath: IndexPath) -> NotificationDomainModel?
     func updateNotificationIsActive(id: UUID, isActive: Bool)
 }
@@ -22,7 +21,7 @@ final class NotificationViewModel: NotificationViewModelProtocol {
     let output: Output
     
     // MARK: - Private properties
-    private let coreDataService: CoreDataNotificationProtocol
+    private let dataProvider: DataProviderProtocol
     private let notificationScheduler: NotificationSchedulerProtocol
     private let disposeBag: DisposeBag = .init()
     
@@ -34,10 +33,10 @@ final class NotificationViewModel: NotificationViewModelProtocol {
     
     // MARK: - Init
     init(
-        coreDataService: CoreDataNotificationProtocol = CoreDataService.shared,
+        dataProvider: DataProviderProtocol,
         notificationScheduler: NotificationSchedulerProtocol = NotificationScheduler()
     ) {
-        self.coreDataService = coreDataService
+        self.dataProvider = dataProvider
         self.notificationScheduler = notificationScheduler
         self.input = .init()
         self.output = .init()
@@ -53,17 +52,22 @@ extension NotificationViewModel {
                 viewModel.deleteNotification(at: indexPath)
             }
             .disposed(by: disposeBag)
-    }
-    
-    func fetchNotifications() {
-        self.output.state.accept(.loading)
         
-        coreDataService.fetchNotifications()
+        dataProvider.notifications.notifications
+            .map { $0.sorted(by: { $0.id.uuidString < $1.id.uuidString }) }
+            .distinctUntilChanged { old, new in
+                guard old.count == new.count else { return false }
+                return zip(old, new).allSatisfy { oldItem, newItem in
+                    oldItem.id == newItem.id &&
+                    oldItem.title == newItem.title &&
+                    oldItem.notes == newItem.notes &&
+                    oldItem.date == newItem.date &&
+                    oldItem.reminderType == newItem.reminderType
+                }
+            }
+            .subscribe(on: MainScheduler.asyncInstance)
             .subscribe(with: self) { viewModel, notifications in
                 viewModel.output.notifications.accept(notifications)
-                viewModel.output.state.accept(.loaded)
-            } onError: { viewModel, error in
-                viewModel.output.state.accept(.error(CustomError.notificationFetchFailed))
             }
             .disposed(by: disposeBag)
     }
@@ -76,25 +80,23 @@ extension NotificationViewModel {
     }
     
     func updateNotificationIsActive(id: UUID, isActive: Bool) {
-        coreDataService.updateNotification(id: id, newTitle: nil, newNotes: nil, newDate: nil, newIsActive: isActive, newReminderType: nil)
-            .subscribe(with: self, onSuccess: { viewModel, updateModel in
-                guard let updateModel else { return }
-                
-                var currentNotification: [NotificationDomainModel] = viewModel.output.notifications.value
-                if let index = currentNotification.firstIndex(where: { $0.id == id }) {
-                    currentNotification[index] = updateModel
-                    viewModel.output.notifications.accept(currentNotification)
+        dataProvider.notifications.updateNotification(id: id, newTitle: nil, newNotes: nil, newDate: nil, newIsActive: isActive, newReminderType: nil)
+            .subscribe(with: self, onSuccess: { viewModel, updatedNotification in
+                guard let updatedNotification else {
+                    viewModel.output.state.accept(.error(CustomError.notificationUpdateFailed))
+                    return
                 }
                 
                 do {
                    try viewModel.notificationScheduler.updateNotification(
                         id: id,
-                        title: updateModel.title,
-                        body: updateModel.notes,
-                        date: updateModel.date,
-                        reminderType: updateModel.reminderType,
+                        title: updatedNotification.title,
+                        body: updatedNotification.notes,
+                        date: updatedNotification.date,
+                        reminderType: updatedNotification.reminderType,
                         isActive: isActive
                     )
+                    viewModel.output.state.accept(.loaded)
                 } catch {
                     viewModel.output.state.accept(.error(CustomError.notificationUpdateFailed))
                 }
@@ -108,15 +110,19 @@ extension NotificationViewModel {
 // MARK: - Private methods
 private extension NotificationViewModel {
     func deleteNotification(at indexPath: IndexPath) {
-        var currentNotifications = output.notifications.value
+        output.state.accept(.loading)
+        
+        let currentNotifications = output.notifications.value
         guard indexPath.row < currentNotifications.count else { return }
         
         let idToDelete: UUID = currentNotifications[indexPath.row].id
-        currentNotifications.remove(at: indexPath.row)
-        output.notifications.accept(currentNotifications)
+        output.notifications.accept(currentNotifications.filter { $0.id != idToDelete })
         
-        coreDataService.deleteNotification(id: idToDelete)
-            .subscribe(with: self, onError: { viewModel, error in
+        dataProvider.notifications.deleteNotification(with: idToDelete)
+            .subscribe(with: self, onCompleted: { viewModel in
+                viewModel.notificationScheduler.removeNotification(id: idToDelete)
+                viewModel.output.state.accept(.loaded)
+            }, onError: { viewModel, error in
                 viewModel.output.state.accept(.error(CustomError.notificationDeleteFailed))
             })
             .disposed(by: disposeBag)
@@ -136,6 +142,7 @@ extension NotificationViewModel {
     struct Output {
         let notifications: BehaviorRelay<[NotificationDomainModel]> = .init(value: [])
         let state: PublishRelay<State> = .init()
+        private let _notification: BehaviorRelay<[NotificationDomainModel]> = .init(value: [])
     }
 }
 
