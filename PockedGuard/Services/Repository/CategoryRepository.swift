@@ -12,15 +12,17 @@ protocol CategoryRepositoryProtocol {
     var categories: BehaviorRelay<[CategoryDomainModel]> { get }
     var currentTransactionType: BehaviorRelay<TransactionType> { get }
     var dataInitialized: PublishRelay<Void> { get }
+    func getCategories(type: TransactionType?) -> [CategoryDomainModel]
     func createCategory(_ category: CategoryDomainModel) -> Completable
-    func updateCategory(id: UUID, newName: String?, newColor: String?) -> Single<CategoryDomainModel?>
     func deleteCategory(with id: UUID) -> Completable
+    func updateCategory(id: UUID, newName: String?, newColor: String?,
+                        newType: TransactionType?) -> Single<CategoryDomainModel?>
 }
 
 final class CategoryRepository: CategoryRepositoryProtocol {
     // MARK: - Public properties
     let categories: BehaviorRelay<[CategoryDomainModel]> = .init(value: [])
-    let currentTransactionType: BehaviorRelay<TransactionType> = .init(value: .income)
+    let currentTransactionType: BehaviorRelay<TransactionType> = .init(value: .expense)
     let dataInitialized: PublishRelay<Void> = .init()
     
     // MARK: - Private properties
@@ -58,7 +60,7 @@ extension CategoryRepository {
             .subscribe(on: backgroundScheduler)
             .observe(on: MainScheduler.instance)
             .subscribe(onCompleted: {
-                self.fetchCategoriesByType()
+                self.fetchCategories()
                 completable(.completed)
             }, onError: { error in
                 completable(.error(error))
@@ -66,7 +68,7 @@ extension CategoryRepository {
         }
     }
     
-    func updateCategory(id: UUID, newName: String?, newColor: String?) -> Single<CategoryDomainModel?> {
+    func updateCategory(id: UUID, newName: String?, newColor: String?, newType: TransactionType?) -> Single<CategoryDomainModel?> {
         Single.create { [weak self] single in
             guard let self else {
                 single(.failure(RepositoryError.deinitialized))
@@ -76,11 +78,12 @@ extension CategoryRepository {
             return self.coreDataService.update(Category.self, uuid: id) { categoryEntity in
                 newName.map { categoryEntity.name = $0 }
                 newColor.map { categoryEntity.color = $0 }
+                newType.map { categoryEntity.type = $0.rawValue}
             }
             .subscribe(on: backgroundScheduler)
             .observe(on: MainScheduler.instance)
             .subscribe(onSuccess: { category in
-                self.fetchCategoriesByType()
+                self.fetchCategories()
                 single(.success(category))
             }, onFailure: { error in
                 single(.failure(error))
@@ -99,19 +102,24 @@ extension CategoryRepository {
                 .subscribe(on: backgroundScheduler)
                 .observe(on: MainScheduler.instance)
                 .subscribe(onCompleted: {
-                    self.fetchCategoriesByType()
+                    self.fetchCategories()
                     completable(.completed)
                 }, onError: { error in
                     completable(.error(error))
                 })
         }
     }
+    
+    func getCategories(type: TransactionType?) -> [CategoryDomainModel] {
+        guard let type else { return [] }
+        return categoriesCache[type] ?? []
+    }
 }
 
 // MARK: - Private methods
 private extension CategoryRepository {
     func setupBindings() {
-        currentTransactionType
+        currentTransactionType.distinctUntilChanged()
             .subscribe(onNext: { [weak self] transactionType in
                 self?.updateCategoriesForCurrentType()
             })
@@ -137,17 +145,23 @@ private extension CategoryRepository {
             .disposed(by: disposeBag)
     }
     
-    func fetchCategoriesByType() {
-        let type: TransactionType = currentTransactionType.value
-        let predicate: NSPredicate? = NSPredicate(format: "type == %d", type.rawValue)
-        fetchCategories(predicate)
-    }
-    
     func cacheCategories(_ categories: [CategoryDomainModel]) {
+        var newCache: [TransactionType: [CategoryDomainModel]] = [:]
+        
+        TransactionType.allCases.forEach { type in
+            newCache[type] = []
+        }
+        
         let groupedCategories: [TransactionType : [CategoryDomainModel]] = Dictionary(grouping: categories, by: { $0.type })
         for (type, categories) in groupedCategories {
-            categoriesCache[type] = categories
+            newCache[type] = categories
         }
+        
+        if categories.isEmpty {
+            newCache[currentTransactionType.value] = []
+        }
+        
+        categoriesCache = newCache
     }
     
     func updateCategoriesForCurrentType() {

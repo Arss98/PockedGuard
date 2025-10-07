@@ -16,14 +16,13 @@ final class AddTemplateCell: UICollectionViewCell {
         button.tintColor = .white
         button.translatesAutoresizingMaskIntoConstraints = false
         button.backgroundColor = .appMainBlue
-        button.layer.cornerRadius = Constants.cornerRadius
         
         return button
     }()
     
     // MARK: - Properties
     let addTemplateTap: PublishSubject<Void> = .init()
-    private let disposeBag: DisposeBag = .init()
+    var disposeBag: DisposeBag = .init()
     
     // MARK: - Init
     override init(frame: CGRect) {
@@ -35,18 +34,25 @@ final class AddTemplateCell: UICollectionViewCell {
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
+    
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        disposeBag = .init()
+        setupBinding()
+    }
 }
 
 // MARK: - Private methods
 private extension AddTemplateCell {
     func setupUI() {
         contentView.addSubview(addButton)
+        addButton.layer.cornerRadius = contentView.bounds.width / 2
         
         NSLayoutConstraint.activate([
             addButton.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
             addButton.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
-            addButton.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
-            addButton.widthAnchor.constraint(equalToConstant: Constants.buttonSize)
+            addButton.heightAnchor.constraint(equalToConstant: contentView.bounds.width),
+            addButton.widthAnchor.constraint(equalToConstant: contentView.bounds.width)
         ])
     }
     
@@ -55,10 +61,4 @@ private extension AddTemplateCell {
             .bind(to: addTemplateTap)
             .disposed(by: disposeBag)
     }
-}
-
-// MARK: - Constants
-private enum Constants {
-    static let buttonSize: CGFloat = 60
-    static let cornerRadius: CGFloat = 30
 }

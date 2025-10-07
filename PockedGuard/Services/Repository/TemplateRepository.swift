@@ -12,6 +12,7 @@ import CoreData
 protocol TemplateRepositoryProtocol {
     var templates: BehaviorRelay<[TemplateDomainModel]> { get }
     var currentTransactionType: BehaviorRelay<TransactionType> { get }
+    func getTemplates(type: TransactionType?) -> [TemplateDomainModel]
     func createTemplate(_ tempalte: TemplateDomainModel) -> Completable
     func deleteTemplate(with id: UUID) -> Completable
     func updateTemplate(id: UUID, newIcon: String?, newType: TransactionType?, newAmount: Double?,
@@ -21,7 +22,7 @@ protocol TemplateRepositoryProtocol {
 final class TemplateRepository: TemplateRepositoryProtocol {
     // MARK: - Public properties
     let templates: BehaviorRelay<[TemplateDomainModel]> = .init(value: [])
-    let currentTransactionType: BehaviorRelay<TransactionType> = .init(value: .income)
+    let currentTransactionType: BehaviorRelay<TransactionType> = .init(value: .expense)
     
     // MARK: - Private properties
     private let coreDataService: CoreDataServiceProtocol
@@ -64,7 +65,7 @@ extension TemplateRepository {
             .subscribe(on: backgroundScheduler)
             .observe(on: MainScheduler.instance)
             .subscribe(onCompleted: {
-                self.fetchTemplatesByType()
+                self.fetchTemplates()
                 completable(.completed)
             }, onError: { error in
                 completable(.error(error))
@@ -98,7 +99,7 @@ extension TemplateRepository {
             .subscribe(on: self.backgroundScheduler)
             .observe(on: MainScheduler.instance)
             .subscribe(onSuccess: { template in
-                self.fetchTemplatesByType()
+                self.fetchTemplates()
                 single(.success(template))
             }, onFailure: { error in
                 single(.failure(error))
@@ -117,12 +118,17 @@ extension TemplateRepository {
                 .subscribe(on: backgroundScheduler)
                 .observe(on: MainScheduler.instance)
                 .subscribe(onCompleted: {
-                    self.fetchTemplatesByType()
+                    self.fetchTemplates()
                     completable(.completed)
                 }, onError: { error in
                     completable(.error(error))
                 })
         }
+    }
+    
+    func getTemplates(type: TransactionType?) -> [TemplateDomainModel] {
+        guard let type else { return [] }
+        return templatesCache[type] ?? []
     }
 }
 
@@ -149,17 +155,23 @@ private extension TemplateRepository {
             .disposed(by: disposeBag)
     }
     
-    func fetchTemplatesByType() {
-        let type: TransactionType = currentTransactionType.value
-        let predicate: NSPredicate? = NSPredicate(format: "type == %d", type.rawValue)
-        fetchTemplates(predicate)
-    }
-    
     func cacheTemplates(_ templates: [TemplateDomainModel]) {
-        let groupedTemplates: [TransactionType : [TemplateDomainModel]] = Dictionary(grouping: templates, by: { $0.type })
-        for (type, templates) in groupedTemplates {
-            templatesCache[type] = templates
+        var newCache: [TransactionType: [TemplateDomainModel]] = [:]
+        
+        TransactionType.allCases.forEach { type in
+            newCache[type] = []
         }
+        
+        let groupedTemplates: [TransactionType: [TemplateDomainModel]] = Dictionary(grouping: templates, by: { $0.type })
+        for (type, templates) in groupedTemplates {
+            newCache[type] = templates
+        }
+        
+        if templates.isEmpty {
+            newCache[currentTransactionType.value] = []
+        }
+        
+        templatesCache = newCache
     }
     
     func updateTemplatesForCurrentType() {

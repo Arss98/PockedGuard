@@ -15,6 +15,7 @@ protocol AccountRepositoryProtocol {
     func updateAccount(id: UUID, newName: String?, newBalance: Double?, newCurrencyType: CurrencyType?) -> Single<AccountDomainModel?>
     func deleteAccount(with id: UUID) -> Completable
     func getAccount(by id: UUID) -> Single<AccountDomainModel?>
+    func getAccounts() -> [AccountDomainModel]
 }
 
 final class AccountRepository: AccountRepositoryProtocol {
@@ -128,6 +129,10 @@ extension AccountRepository {
                     single(.failure(error))
                 }
         }
+    }
+    
+    func getAccounts() -> [AccountDomainModel] {
+        accounts.value
     }
 }
 

@@ -25,6 +25,7 @@ final class CustomTextField: UIView {
         textField.leftView = UIView(frame: CGRect(x: .zero, y: .zero, width: Constants.Layout.leftViewWidth, height: .zero))
         textField.leftViewMode = .always
         textField.textColor = .white
+        textField.overrideUserInterfaceStyle = .dark
         return textField
     }()
     
@@ -37,7 +38,7 @@ final class CustomTextField: UIView {
     var textFieldRx: Reactive<UITextField> {
         return textField.rx
     }
-        
+    
     // MARK: - Init
     init() {
         super.init(frame: .zero)
@@ -50,9 +51,15 @@ final class CustomTextField: UIView {
     }
     
     // MARK: - Setup UI
-    func configure(with title: String, placeholder: String, titleColor: UIColor = .appForeground) {
+    func configure(
+        with title: String,
+        placeholder: String,
+        keyboardType: UIKeyboardType = .default,
+        titleColor: UIColor = .appForeground
+    ) {
         titleLabel.text = title
         titleLabel.textColor = titleColor
+        textField.keyboardType = keyboardType
         textField.attributedPlaceholder = NSAttributedString(
             string: placeholder,
             attributes: [NSAttributedString.Key.foregroundColor: UIColor.appForegroundSecondary])

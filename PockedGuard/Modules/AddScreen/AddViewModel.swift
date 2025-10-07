@@ -35,23 +35,26 @@ final class AddViewModel: AddViewModelProtocol {
 private extension AddViewModel {
     func setupBinding() {
         setupInputBindings()
-        inputDataProviderBindings()
+        dataProviderBindings()
     }
     
     func setupInputBindings() {
         input.selectedTemplate
+            .distinctUntilChanged()
             .subscribe(onNext: { [weak self] template in
                 if let category: CategoryDomainModel = template?.category {
                     self?.input.selectedCategory.accept(category)
                 }
                 
                 if let amount: Double = template?.amount, amount > 0 {
+                    self?.input.amountFromTemplate.onNext(amount)
                     self?.input.amount.accept(amount)
                 }
             })
             .disposed(by: disposeBag)
         
         input.selectedAccount
+            .distinctUntilChanged()
             .subscribe(onNext: { [weak self] account in
                 let symbol: String = account?.currency.symbol ?? ""
                 self?.output.currecySymbol.accept(symbol)
@@ -59,8 +62,10 @@ private extension AddViewModel {
             .disposed(by: disposeBag)
         
         input.transactionType
+            .distinctUntilChanged()
             .subscribe { [weak self] type in
-                self?.fetchData(by: type)
+                self?.fetchData(type)
+                self?.resetSelectedData()
             }
             .disposed(by: disposeBag)
         
@@ -71,7 +76,7 @@ private extension AddViewModel {
             .disposed(by: disposeBag)
     }
     
-    func inputDataProviderBindings() {
+    func dataProviderBindings() {
         dataProvider.accounts.accounts
             .observe(on: MainScheduler.asyncInstance)
             .subscribe(onNext: { [weak self] accounts in
@@ -88,6 +93,7 @@ private extension AddViewModel {
                 }
             })
             .disposed(by: disposeBag)
+
         
         dataProvider.template.templates
             .observe(on: MainScheduler.asyncInstance)
@@ -107,10 +113,16 @@ private extension AddViewModel {
             .disposed(by: disposeBag)
     }
     
-    func fetchData(by type: TransactionType? = nil) {
-        guard let type else { return }
-        dataProvider.template.currentTransactionType.accept(type)
+    
+    func fetchData(_ type: TransactionType) {
         dataProvider.categories.currentTransactionType.accept(type)
+        dataProvider.template.currentTransactionType.accept(type)
+    }
+    
+    func resetSelectedData() {
+        self.input.amountFromTemplate.onNext(0)
+        self.input.selectedCategory.accept(nil)
+        self.input.selectedTemplate.accept(nil)
     }
     
     func validateData() throws {
@@ -131,7 +143,7 @@ private extension AddViewModel {
                 id: UUID(),
                 amount: input.amount.value,
                 date: Date(),
-                type: input.transactionType.value ?? .income,
+                type: input.transactionType.value,
                 paymentMethod: .card,
                 notes: input.notes.value,
                 category: input.selectedCategory.value,
@@ -179,8 +191,9 @@ extension AddViewModel {
     struct Input {
         let saveAction: PublishSubject<Void> = .init()
         let amount: BehaviorRelay<Double> = .init(value: 0)
+        let amountFromTemplate: PublishSubject<Double> = .init()
         let notes: BehaviorRelay<String> = .init(value: "")
-        let transactionType: BehaviorRelay<TransactionType?> = .init(value: nil)
+        let transactionType: BehaviorRelay<TransactionType> = .init(value: .expense)
         let selectedCategory: BehaviorRelay<CategoryDomainModel?> = .init(value: nil)
         let selectedTemplate: BehaviorRelay<TemplateDomainModel?> = .init(value: nil)
         let selectedAccount: BehaviorRelay<AccountDomainModel?> = .init(value: nil)

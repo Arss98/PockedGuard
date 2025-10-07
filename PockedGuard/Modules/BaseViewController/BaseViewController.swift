@@ -14,8 +14,8 @@ class BaseViewController: UIViewController {
     private lazy var activityIndicatorBackground: UIView = {
         let view: UIView = .init()
         view.translatesAutoresizingMaskIntoConstraints = false
-        view.backgroundColor = .black.withAlphaComponent(Constants.activityBackgroundAlpha)
-        view.layer.cornerRadius = Constants.cornerRadius
+        view.backgroundColor = .black.withAlphaComponent(Constants.Layout.activityBackgroundAlpha)
+        view.layer.cornerRadius = Constants.Layout.cornerRadius
         view.isHidden = true
         
         return view
@@ -28,6 +28,19 @@ class BaseViewController: UIViewController {
         activityIndicator.stopAnimating()
         
         return activityIndicator
+    }()
+    
+    private lazy var toastLabel: UILabel = {
+        let label: UILabel = .init()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.backgroundColor = .appCardFieldSecondary
+        label.textColor = .white
+        label.textAlignment = .center
+        label.font = .systemFont(ofSize: Constants.Text.fontSize, weight: .medium)
+        label.layer.cornerRadius = Constants.Layout.cornerRadius
+        label.clipsToBounds = true
+        label.alpha = .zero
+        return label
     }()
     
     // MARK: - Properties
@@ -46,8 +59,9 @@ class BaseViewController: UIViewController {
 private extension BaseViewController {
     func setupUI() {
         view.backgroundColor = .appBackground
-        [activityIndicatorBackground].forEach { view.addSubview($0) }
+        [activityIndicatorBackground, toastLabel].forEach { view.addSubview($0) }
         activityIndicatorBackground.addSubview(activityIndicator)
+        toastLabel.bringSubviewToFront(view)
     }
     
     func setupNavigationBar() {
@@ -63,11 +77,18 @@ private extension BaseViewController {
         NSLayoutConstraint.activate([
             activityIndicatorBackground.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             activityIndicatorBackground.centerYAnchor.constraint(equalTo: view.centerYAnchor),
-            activityIndicatorBackground.widthAnchor.constraint(equalToConstant: Constants.activityBackgroundSize),
-            activityIndicatorBackground.heightAnchor.constraint(equalToConstant: Constants.activityBackgroundSize),
+            activityIndicatorBackground.widthAnchor.constraint(equalToConstant: Constants.Layout.activityBackgroundSize),
+            activityIndicatorBackground.heightAnchor.constraint(equalToConstant: Constants.Layout.activityBackgroundSize),
             
             activityIndicator.centerXAnchor.constraint(equalTo: activityIndicatorBackground.centerXAnchor),
-            activityIndicator.centerYAnchor.constraint(equalTo: activityIndicatorBackground.centerYAnchor)
+            activityIndicator.centerYAnchor.constraint(equalTo: activityIndicatorBackground.centerYAnchor),
+            
+            toastLabel.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+            toastLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor,
+                                                constant: Constants.Layout.defaultPadding),
+            toastLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor,
+                                                 constant: -Constants.Layout.defaultPadding),
+            toastLabel.heightAnchor.constraint(greaterThanOrEqualToConstant: Constants.Layout.toastLabelHeight)
         ])
     }
 }
@@ -103,7 +124,7 @@ extension BaseViewController {
         view.bringSubviewToFront(activityIndicatorBackground)
         view.isUserInteractionEnabled = !isActive
         
-        UIView.animate(withDuration: Constants.animationDuration) { [weak self] in
+        UIView.animate(withDuration: Constants.Animation.animationDuration) { [weak self] in
             self?.activityIndicatorBackground.alpha = isActive ? 1 : 0
             self?.activityIndicatorBackground.isHidden = !isActive
         }
@@ -117,6 +138,7 @@ extension BaseViewController {
         handler: (() -> Void)? = nil
     ) {
         let alert: UIAlertController = .init(title: title, message: message, preferredStyle: .alert)
+        alert.overrideUserInterfaceStyle = .dark
         let action: UIAlertAction = .init(title: .Localized.Common.ok.localized, style: .default) { _ in
             handler?()
         }
@@ -182,12 +204,41 @@ extension BaseViewController {
             }
         }
     }
+    
+    func showToast(message: String) {
+        toastLabel.text = message
+        showToastAnimation()
+    }
+    
+    private func showToastAnimation() {
+        UIView.animate(withDuration: Constants.Animation.showAnimationDuration, delay: .zero, options: .curveEaseInOut) {
+            self.toastLabel.alpha = 1
+        } completion: { _ in self.hideToastAnimation() }
+    }
+
+    private func hideToastAnimation() {
+        UIView.animate(withDuration: Constants.Animation.animationDuration, delay: .zero, options: .curveEaseInOut) {
+            self.toastLabel.alpha = 0
+        } completion: { _ in self.toastLabel.text = nil }
+    }
 }
 
 // MARK: - Constants
 private enum Constants {
-    static let animationDuration: TimeInterval = 0.3
-    static let activityBackgroundAlpha: CGFloat = 0.2
-    static let activityBackgroundSize: CGFloat = 64
-    static let cornerRadius: CGFloat = 12
+    enum Layout {
+        static let activityBackgroundAlpha: CGFloat = 0.2
+        static let activityBackgroundSize: CGFloat = 64
+        static let cornerRadius: CGFloat = 12
+        static let defaultPadding: CGFloat = 16
+        static let toastLabelHeight: CGFloat = 52
+    }
+    
+    enum Animation {
+        static let animationDuration: TimeInterval = 0.3
+        static let showAnimationDuration: TimeInterval = 1.0
+    }
+    
+    enum Text {
+        static let fontSize: CGFloat = 16
+    }
 }

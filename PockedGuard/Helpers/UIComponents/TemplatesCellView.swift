@@ -13,6 +13,7 @@ final class TemplatesCellView: UICollectionViewCell {
         let image: UIImageView = .init()
         image.translatesAutoresizingMaskIntoConstraints = false
         image.tintColor = .white
+        image.isUserInteractionEnabled = true
         return image
     }()
     
@@ -27,7 +28,7 @@ final class TemplatesCellView: UICollectionViewCell {
     }
     
     override var intrinsicContentSize: CGSize {
-        CGSize(width: Constants.cellSize, height: Constants.cellSize)
+        CGSize(width: contentView.bounds.width, height: contentView.bounds.width)
     }
     
     override var isSelected: Bool {
@@ -52,17 +53,17 @@ final class TemplatesCellView: UICollectionViewCell {
 private extension TemplatesCellView {
     func setupUI() {
         backgroundColor = .appCardAndField
-        layer.cornerRadius = Constants.cellSize / 2
-        addSubview(icon)
+        layer.cornerRadius = contentView.bounds.width / 2
+        contentView.addSubview(icon)
         
         NSLayoutConstraint.activate([
-            widthAnchor.constraint(equalToConstant: Constants.cellSize),
-            heightAnchor.constraint(equalToConstant: Constants.cellSize),
+            widthAnchor.constraint(equalToConstant: contentView.bounds.width),
+            heightAnchor.constraint(equalToConstant: contentView.bounds.width),
             
-            icon.centerXAnchor.constraint(equalTo: centerXAnchor),
-            icon.centerYAnchor.constraint(equalTo: centerYAnchor),
-            icon.widthAnchor.constraint(equalToConstant: Constants.cellSize / 2),
-            icon.heightAnchor.constraint(equalToConstant: Constants.cellSize / 2)
+            icon.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
+            icon.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
+            icon.widthAnchor.constraint(equalToConstant: contentView.bounds.width / 2),
+            icon.heightAnchor.constraint(equalToConstant: contentView.bounds.width / 2)
         ])
     }
     
@@ -76,6 +77,5 @@ private extension TemplatesCellView {
 
 // MARK: - Constants
 private enum Constants {
-    static let cellSize: CGFloat = 60
     static let animationDuration: TimeInterval = 0.3
 }

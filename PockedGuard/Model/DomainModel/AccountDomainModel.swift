@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct AccountDomainModel: Equatable {
+struct AccountDomainModel: Equatable, Hashable {
     let id: UUID
     let name: String
     let balance: Double

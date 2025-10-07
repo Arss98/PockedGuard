@@ -150,7 +150,8 @@ private extension NotificationViewController {
     }
     
     func setupDataSource() {
-        dataSource = DataSource(collectionView: notificationCollectionView) { [weak self] collectionView, indexPath, notification in
+        dataSource = DataSource(collectionView: notificationCollectionView)
+        { [weak self] collectionView, indexPath, notification in
             guard let cell = collectionView.dequeueReusableCell(
                 withReuseIdentifier: String(describing: NotificationViewCell.self),
                 for: indexPath) as? NotificationViewCell else {
@@ -165,13 +166,13 @@ private extension NotificationViewController {
         }
     }
     
-    func applySnapshot(notifications: [NotificationDomainModel], animatingDifferences: Bool = true) {
+    func applySnapshot(notifications: [NotificationDomainModel]) {
         guard let dataSource else { return }
         
         var snapshot = Snapshot()
         snapshot.appendSections([0])
         snapshot.appendItems(notifications)
-        dataSource.apply(snapshot, animatingDifferences: animatingDifferences)
+        dataSource.apply(snapshot, animatingDifferences: true)
     }
     
     func setupBinding() {

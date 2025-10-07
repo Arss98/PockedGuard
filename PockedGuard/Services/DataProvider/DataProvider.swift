@@ -6,6 +6,7 @@
 //
 
 import RxSwift
+import RxCocoa
 
 protocol DataProviderProtocol {
     var transaction: TransactionRepositoryProtocol { get }

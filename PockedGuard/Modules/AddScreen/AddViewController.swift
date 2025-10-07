@@ -10,13 +10,14 @@ import RxCocoa
 
 final class AddViewController: BaseViewController {
     // MARK: - UI Elements
-    private lazy var financeSegmentedControl: CustomSegmentedControl = .init(items: Constants.SegmentItem.finance)
     private lazy var dragHandleView: DragHandleView = .init()
+    private lazy var financeSegmentedControl: CustomSegmentedControl = .init(items: Constants.SegmentItem.finance)
     
-    private lazy var templatesInfoLabel: TemplatesInfoView = {
-        let label: TemplatesInfoView = .init(frame: .zero)
-        label.alpha = .zero
-        return label
+    private lazy var templatesInfoTooltip: InfoTooltipView = {
+        let tooltip: InfoTooltipView = .init(frame: .zero)
+        tooltip.configure(with: .Localized.Add.templatesInfo.localized)
+        tooltip.alpha = .zero
+        return tooltip
     }()
     
     private lazy var accountsCollectionView: UICollectionView = {
@@ -68,8 +69,9 @@ final class AddViewController: BaseViewController {
         textField.textColor = .white
         textField.textAlignment = .center
         textField.keyboardType = .decimalPad
+        textField.overrideUserInterfaceStyle = .dark
         
-        let placeholderText: String = .Localized.Add.amountPlaceholder.localized
+        let placeholderText: String = .Localized.Add.amountZeroPlaceholder.localized
         let attributes: [NSAttributedString.Key: Any] = [
             .foregroundColor: UIColor.white,
             .font: UIFont.systemFont(ofSize: Constants.Text.amountTextFieldFontSize, weight: .semibold)
@@ -84,6 +86,7 @@ final class AddViewController: BaseViewController {
         textField.textColor = .appForegroundSecondary
         textField.textAlignment = .center
         textField.font = .systemFont(ofSize: Constants.Text.fontSize, weight: .regular)
+        textField.overrideUserInterfaceStyle = .dark
         
         let placeholderText: String = .Localized.Add.descriptionPlaceholder.localized
         let attributes: [NSAttributedString.Key: Any] = [
@@ -130,6 +133,7 @@ final class AddViewController: BaseViewController {
         collection.translatesAutoresizingMaskIntoConstraints = false
         collection.showsHorizontalScrollIndicator = false
         collection.backgroundColor = .clear
+        collection.delegate = self
         collection.register(TemplatesCellView.self,
                             forCellWithReuseIdentifier: String(describing: TemplatesCellView.self))
         
@@ -144,7 +148,7 @@ final class AddViewController: BaseViewController {
         label.numberOfLines = 0
         label.font = .systemFont(ofSize: Constants.Text.fontSize, weight: .regular)
         label.textAlignment = .center
-        label.isHidden = true
+        label.alpha = .zero
         return label
     }()
     
@@ -153,7 +157,7 @@ final class AddViewController: BaseViewController {
         label.translatesAutoresizingMaskIntoConstraints = false
         label.font = .systemFont(ofSize: Constants.Text.labelFontSize, weight: .semibold)
         label.textColor = .white
-        label.text = .Localized.Common.categoriesTitle.localized
+        label.text = .Localized.Common.categoryLabelTitle.localized
         return label
     }()
     
@@ -188,6 +192,7 @@ final class AddViewController: BaseViewController {
         collection.backgroundColor = .clear
         collection.translatesAutoresizingMaskIntoConstraints = false
         collection.showsVerticalScrollIndicator = false
+        collection.delegate = self
         collection.register(CategoriesViewCell.self,
                             forCellWithReuseIdentifier: String(describing: CategoriesViewCell.self))
         
@@ -209,11 +214,14 @@ final class AddViewController: BaseViewController {
         let gesture: UITapGestureRecognizer = .init()
         view.addGestureRecognizer(gesture)
         gesture.delegate = self
+        gesture.cancelsTouchesInView = false
         return gesture
     }()
     
     // MARK: - Properties
     private let viewModel: AddViewModelProtocol
+    private var categoriesDataSource: UICollectionViewDiffableDataSource<Int, CategoryDomainModel>?
+    private var templatesDataSource: UICollectionViewDiffableDataSource<Int, TemplateDomainModel>?
     
     // MARK: - Init
     init(viewModel: AddViewModelProtocol) {
@@ -230,6 +238,7 @@ final class AddViewController: BaseViewController {
         super.viewDidLoad()
         setupUI()
         setConstraints()
+        setupDataSource()
         setupBindings()
     }
 }
@@ -239,18 +248,12 @@ private extension AddViewController {
     func setupBindings() {
         setupButtonBindings()
         setupTextFiledBindings()
-        setupCollectionBindings()
-        setupSelectionCollectionCellBindings()
+        setupOutputBindings()
+        setupInputBindings()
         setupKeyboardBinings()
-        setupErrorBinding()
     }
     
     func setupButtonBindings() {
-        financeSegmentedControl.selectedIndex
-            .map { TransactionType(rawValue: Int16($0))}
-            .bind(to: viewModel.input.transactionType)
-            .disposed(by: disposeBag)
-        
         closeButton.rx.tap
             .bind(to: viewModel.input.dismiss)
             .disposed(by: disposeBag)
@@ -263,9 +266,9 @@ private extension AddViewController {
             .subscribe(onNext: { [weak self] in
                 guard let self else  { return }
                 
-                let isVisible = !self.templatesInfoLabel.isVisible
-                self.templatesInfoLabel.isVisible = isVisible
-                self.view.bringSubviewToFront(self.templatesInfoLabel)
+                let isVisible = !self.templatesInfoTooltip.isVisible
+                self.templatesInfoTooltip.isVisible = isVisible
+                self.view.bringSubviewToFront(self.templatesInfoTooltip)
                 
                 self.helpButton.tintColor = isVisible ? .appSelectedBlue : .appForegroundSecondary
             })
@@ -275,6 +278,7 @@ private extension AddViewController {
     func setupTextFiledBindings() {
         amountTextField.rx.text.orEmpty
             .map { Double($0.filter { $0.isNumber }) ?? 0 }
+            .distinctUntilChanged()
             .bind(to: viewModel.input.amount)
             .disposed(by: disposeBag)
         
@@ -284,7 +288,14 @@ private extension AddViewController {
             .disposed(by: disposeBag)
     }
     
-    func setupCollectionBindings() {
+    func setupOutputBindings() {
+        viewModel.output.error
+            .asDriver(onErrorDriveWith: .empty())
+            .drive(onNext: { [weak self] error in
+                self?.showErrorAlert(message: error.localizedDescription)
+            })
+            .disposed(by: disposeBag)
+        
         viewModel.output.accounts
             .asDriver(onErrorJustReturn: [])
             .drive(accountsCollectionView.rx.items(
@@ -295,43 +306,49 @@ private extension AddViewController {
                 .disposed(by: disposeBag)
         
         viewModel.output.templates
-            .asDriver(onErrorJustReturn: [])
-            .drive(templatesCollectionView.rx.items(
-                cellIdentifier: String(describing: TemplatesCellView.self),
-                cellType: TemplatesCellView.self)) { row, model, cell in
-                    cell.configure(with: model.icon)
-                }
-                .disposed(by: disposeBag)
-        
-        viewModel.output.templates
-            .map { !$0.isEmpty }
-            .asDriver(onErrorJustReturn: true)
-            .drive(emptyTemplatesLabel.rx.isHidden)
+            .distinctUntilChanged()
+            .observe(on: MainScheduler.asyncInstance)
+            .subscribe(onNext: { [weak self] templates in
+                self?.applyTemplatesSnapshot(templates: templates)
+                self?.showEmptyTemplatesLabel(isShow: templates.isEmpty)
+            })
             .disposed(by: disposeBag)
         
         viewModel.output.categories
-            .asDriver(onErrorJustReturn: [])
-            .drive( categoriesCollectionView.rx.items(
-                cellIdentifier: String(describing: CategoriesViewCell.self),
-                cellType: CategoriesViewCell.self)) { row, model, cell in
-                    cell.configure(title: model.name, color: model.color)
-                }
-                .disposed(by: disposeBag)
+            .distinctUntilChanged()
+            .observe(on: MainScheduler.asyncInstance)
+            .subscribe(onNext: { [weak self] categories in
+                self?.applyCategoriesSnapshot(categories: categories)
+            })
+            .disposed(by: disposeBag)
+    }
+    
+    func setupInputBindings() {
+        financeSegmentedControl.selectedIndex
+            .compactMap { TransactionType(rawValue: Int16($0)) }
+            .bind(to: viewModel.input.transactionType)
+            .disposed(by: disposeBag)
         
         accountsCollectionView.rx.modelSelected(AccountDomainModel.self)
             .bind(to: viewModel.input.selectedAccount)
             .disposed(by: disposeBag)
         
-        templatesCollectionView.rx.modelSelected(TemplateDomainModel.self)
-            .bind(to: viewModel.input.selectedTemplate)
+        viewModel.input.amountFromTemplate
+            .observe(on: MainScheduler.instance)
+            .subscribe(onNext: { [weak self] amount in
+                guard let self else { return }
+                
+                let symbol: String = self.viewModel.output.currecySymbol.value
+                
+                if amount > 0 {
+                    let amountInt: Int = .init(amount)
+                    self.amountTextField.text = "\(amountInt) \(symbol)"
+                } else {
+                    self.amountTextField.text = ""
+                }
+            })
             .disposed(by: disposeBag)
         
-        categoriesCollectionView.rx.modelSelected(CategoryDomainModel.self)
-            .bind(to: viewModel.input.selectedCategory)
-            .disposed(by: disposeBag)
-    }
-    
-    func setupSelectionCollectionCellBindings() {
         viewModel.input.selectedAccount
             .observe(on: MainScheduler.instance)
             .subscribe(onNext: { [weak self] account in
@@ -363,20 +380,11 @@ private extension AddViewController {
             .disposed(by: disposeBag)
     }
     
-    func setupErrorBinding() {
-        viewModel.output.error
-            .asDriver(onErrorDriveWith: .empty())
-            .drive(onNext: { [weak self] error in
-                self?.showErrorAlert(message: error.localizedDescription)
-            })
-            .disposed(by: disposeBag)
-    }
-    
     func setupKeyboardBinings() {
         tapGesture.rx.event
             .subscribe { [weak self] _ in
                 self?.view.endEditing(true)
-                self?.templatesInfoLabel.isVisible = false
+                self?.templatesInfoTooltip.isVisible = false
                 self?.helpButton.tintColor = .appForegroundSecondary
             }
             .disposed(by: disposeBag)
@@ -431,25 +439,79 @@ private extension AddViewController {
     }
 }
 
+// MARK: - UICollectionViewDelegate and UICollectionViewDiffableDataSource methods
+extension AddViewController: UICollectionViewDelegate {
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        switch collectionView {
+        case templatesCollectionView:
+            if let template = templatesDataSource?.itemIdentifier(for: indexPath) {
+                viewModel.input.selectedTemplate.accept(template)
+            }
+        case categoriesCollectionView:
+            if let category = categoriesDataSource?.itemIdentifier(for: indexPath) {
+                viewModel.input.selectedCategory.accept(category)
+            }
+        default: break
+        }
+    }
+    
+    private func setupDataSource() {
+        setupTemplateDataSource()
+        setupCategoriesDataSource()
+    }
+    
+    private func setupTemplateDataSource() {
+        templatesDataSource = .init(collectionView: templatesCollectionView) { collectionView, indexPath, item in
+            guard let cell = collectionView.dequeueReusableCell(
+                withReuseIdentifier: String(describing: TemplatesCellView.self),
+                for: indexPath) as? TemplatesCellView else { return UICollectionViewCell() }
+            cell.configure(with: item.icon)
+            return cell
+        }
+    }
+    
+    private func setupCategoriesDataSource() {
+        categoriesDataSource = .init(collectionView: categoriesCollectionView) { collectionView, indexPath, item in
+            guard let cell = collectionView.dequeueReusableCell(
+                withReuseIdentifier: String(describing: CategoriesViewCell.self),
+                for: indexPath) as? CategoriesViewCell else { return UICollectionViewCell() }
+            cell.configure(title: item.name, color: item.color)
+            return cell
+        }
+    }
+    
+    private func applyTemplatesSnapshot(templates: [TemplateDomainModel]) {
+        guard let templatesDataSource else { return }
+        
+        var snapshot: NSDiffableDataSourceSnapshot<Int, TemplateDomainModel> = .init()
+        snapshot.appendSections([.zero])
+        snapshot.appendItems(templates)
+        templatesDataSource.apply(snapshot, animatingDifferences: true)
+        self.view.layoutIfNeeded()
+    }
+    
+    private func applyCategoriesSnapshot(categories: [CategoryDomainModel]) {
+        guard let categoriesDataSource else { return }
+        
+        var snapshot: NSDiffableDataSourceSnapshot<Int, CategoryDomainModel> = .init()
+        snapshot.appendSections([.zero])
+        snapshot.appendItems(categories)
+        categoriesDataSource.apply(snapshot, animatingDifferences: true)
+        self.view.layoutIfNeeded()
+    }
+}
+
 // MARK: - UIGestureRecognizerDelegate
 extension AddViewController: UIGestureRecognizerDelegate {
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
-        let location: CGPoint = touch.location(in: view)
-        
-        if helpButton.frame.contains(location) || accountsCollectionView.frame.contains(location)
-            || templatesCollectionView.frame.contains(location)
-            || categoriesCollectionView.frame.contains(location) {
-            return false
-        }
-        
-        return true
+        return !(touch.view is UITextField) && !(touch.view is UIButton) && !(touch.view is UICollectionViewCell)
     }
 }
 
 // MARK: - Private methods
 private extension AddViewController {
     func setupUI() {
-        [templatesInfoLabel, accountsCollectionView, dragHandleView, financeSegmentedControl, closeButton, dateLabel,
+        [templatesInfoTooltip, accountsCollectionView, dragHandleView, financeSegmentedControl, closeButton, dateLabel,
          amountTextField, descriptionTextField, templatesStackView, templatesCollectionView, emptyTemplatesLabel,
          categoryLabel, categoriesCollectionView, doneButton]
             .forEach { view.addSubview($0) }
@@ -458,7 +520,7 @@ private extension AddViewController {
     }
     
     func updateCurrencyDisplay(symbol: String) {
-        let placeholderText: String = .Localized.Add.amountPlaceholder.localized
+        let placeholderText: String = .Localized.Add.amountZeroPlaceholder.localized
         let attributes: [NSAttributedString.Key: Any] = [
             .foregroundColor: UIColor.white,
             .font: UIFont.systemFont(ofSize: Constants.Text.amountTextFieldFontSize, weight: .semibold)
@@ -478,6 +540,12 @@ private extension AddViewController {
             if !cleanedText.isEmpty {
                 amountTextField.text = "\(cleanedText) \(symbol)"
             }
+        }
+    }
+    
+    func showEmptyTemplatesLabel(isShow: Bool) {
+        UIView.animate(withDuration: Constants.Animation.duration) {
+            self.emptyTemplatesLabel.alpha = isShow ? 1 : 0
         }
     }
     
@@ -523,9 +591,9 @@ private extension AddViewController {
             templatesStackView.trailingAnchor.constraint(equalTo: view.trailingAnchor,
                                                          constant: -Constants.Layout.defaultPadding),
             
-            templatesInfoLabel.trailingAnchor.constraint(equalTo: helpButton.trailingAnchor,
+            templatesInfoTooltip.trailingAnchor.constraint(equalTo: helpButton.trailingAnchor,
                                                          constant: -Constants.Layout.defaultPadding),
-            templatesInfoLabel.topAnchor.constraint(equalTo: helpButton.bottomAnchor),
+            templatesInfoTooltip.topAnchor.constraint(equalTo: helpButton.bottomAnchor),
             
             templatesCollectionView.topAnchor.constraint(equalTo: templatesLabel.bottomAnchor,
                                                          constant: Constants.Layout.spacing),
@@ -584,6 +652,10 @@ private enum Constants {
         static let accountsCellHeight: CGFloat = 60
         static let accountsCellWidth: CGFloat = 160
         static let accountsCollectionSpacing: CGFloat = 8
+    }
+    
+    enum Animation {
+        static let duration: TimeInterval = 0.3
     }
     
     enum SegmentItem {

@@ -23,7 +23,7 @@ final class AddAccountCell: UICollectionViewCell {
     
     // MARK: - properties
     let addAccountTap: PublishSubject<Void> = .init()
-    private let disposeBag: DisposeBag = .init()
+    var disposeBag: DisposeBag = .init()
     
     // MARK: - Init
     override init(frame: CGRect) {
@@ -34,6 +34,12 @@ final class AddAccountCell: UICollectionViewCell {
     
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+    
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        disposeBag = .init()
+        setupBinding()
     }
 }
 

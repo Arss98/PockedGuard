@@ -121,7 +121,13 @@ final class CreateNotificationViewController: BaseViewController {
     private lazy var tapGesture: UITapGestureRecognizer = {
         let gesture: UITapGestureRecognizer = .init()
         view.addGestureRecognizer(gesture)
+        gesture.cancelsTouchesInView = false
         return gesture
+    }()
+    
+    private lazy var doneButtonBottomConstraint: NSLayoutConstraint = {
+        doneButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor,
+                                           constant: -Constants.Layout.defaultPadding)
     }()
     
     // MARK: - Properties
@@ -143,9 +149,8 @@ final class CreateNotificationViewController: BaseViewController {
         setupUI()
         setConstraints()
         setupInitialValues()
-        setupInputBinding()
-        setupOutputBindings()
-        setupKeyboardBindings()
+        setupBinding()
+        setupKeyboardHandling()
     }
 }
 
@@ -161,6 +166,12 @@ private extension CreateNotificationViewController {
             
             title = .Localized.Notification.edit.localized
         }
+    }
+    
+    func setupBinding() {
+        setupInputBinding()
+        setupOutputBindings()
+        setupKeyboardBindings()
     }
     
     func setupInputBinding() {
@@ -239,6 +250,46 @@ private extension CreateNotificationViewController {
     }
 }
 
+// MARK: - Keyboard setting
+private extension CreateNotificationViewController {
+    func setupKeyboardHandling() {
+        NotificationCenter.default.rx.notification(UIResponder.keyboardWillShowNotification)
+            .subscribe(onNext: { [weak self] notification in
+                guard let self,
+                      let keyboardFrame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect,
+                      let duration = notification.userInfo?[UIResponder.keyboardAnimationDurationUserInfoKey] as? Double,
+                      let curve = notification.userInfo?[UIResponder.keyboardAnimationCurveUserInfoKey] as? UInt else { return }
+                
+                let keyboardHeight = keyboardFrame.height
+                
+                self.updateLayoutForKeyboard(
+                    height: keyboardHeight - Constants.Layout.defaultPadding,
+                    duration: duration,
+                    curve: curve
+                )
+            })
+            .disposed(by: disposeBag)
+
+        NotificationCenter.default.rx.notification(UIResponder.keyboardWillHideNotification)
+            .subscribe(onNext: { [weak self] notification in
+                guard let self,
+                      let duration = notification.userInfo?[UIResponder.keyboardAnimationDurationUserInfoKey] as? Double,
+                      let curve = notification.userInfo?[UIResponder.keyboardAnimationCurveUserInfoKey] as? UInt else { return }
+                
+                self.updateLayoutForKeyboard(height: Constants.Layout.defaultPadding, duration: duration, curve: curve)
+            })
+            .disposed(by: disposeBag)
+    }
+    
+    func updateLayoutForKeyboard(height: CGFloat, duration: TimeInterval, curve: UInt) {
+        doneButtonBottomConstraint.constant = -height
+        
+        UIView.animate(withDuration: duration, delay: .zero, options: UIView.AnimationOptions(rawValue: curve)) {
+            self.view.layoutIfNeeded()
+        }
+    }
+}
+
 // MARK: - Private methods
 private extension CreateNotificationViewController {
     func setupUI() {
@@ -287,9 +338,8 @@ private extension CreateNotificationViewController {
                                                 constant: Constants.Layout.defaultPadding),
             doneButton.trailingAnchor.constraint(equalTo: view.trailingAnchor,
                                                  constant: -Constants.Layout.defaultPadding),
-            doneButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor,
-                                               constant: -Constants.Layout.defaultPadding),
-            doneButton.heightAnchor.constraint(equalToConstant: Constants.Layout.buttonHeight)
+            doneButton.heightAnchor.constraint(equalToConstant: Constants.Layout.buttonHeight),
+            doneButtonBottomConstraint
         ])
     }
 }

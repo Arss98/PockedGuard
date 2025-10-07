@@ -11,8 +11,8 @@ import SwiftUI
 
 final class MainViewController: BaseViewController {
     // MARK: - UI Elements
-    private lazy var financeSegmentedControl: CustomSegmentedControl = .init(items: Constants.SegmentedControl.financeItems)
     private lazy var periodSegmentedControl: CustomSegmentedControl = .init(items: Constants.SegmentedControl.periodItems)
+    private lazy var financeSegmentedControl: CustomSegmentedControl = .init(items: Constants.SegmentedControl.financeItems)
     
     private lazy var accountsCollectionView: UICollectionView = {
         let layout: UICollectionViewFlowLayout = .init()
@@ -95,7 +95,6 @@ final class MainViewController: BaseViewController {
         tableView.separatorStyle = .none
         tableView.sectionHeaderTopPadding = .zero
         tableView.delegate = self
-        tableView.dataSource = self
         tableView.rowHeight = UITableView.automaticDimension
         tableView.register(TransactionRowCell.self,
                            forCellReuseIdentifier: String(describing: TransactionRowCell.self))
@@ -134,10 +133,9 @@ final class MainViewController: BaseViewController {
     }()
     
     // MARK: - Properties
-    var viewModel: MainViewModelProtocol
-    
+    private var viewModel: MainViewModelProtocol
+    private var transactionDataSource: UITableViewDiffableDataSource<TransactionSection, TransactionDomainModel>?
     private var isExpanded = false
-    private var sections: [TransactionSection] = []
     
     // MARK: - Init
     init(viewModel: MainViewModelProtocol) {
@@ -153,9 +151,10 @@ final class MainViewController: BaseViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
-        setupBindings()
+        setupTransactionDataSource()
         setConstraints()
         setupGestures()
+        setupBindings()
     }
     
     override func viewDidLayoutSubviews() {
@@ -182,8 +181,8 @@ private extension MainViewController {
             .disposed(by: disposeBag)
         
         financeSegmentedControl.selectedIndex
-            .map { TransactionType(rawValue: Int16($0)) }
-            .bind(to: viewModel.input.currentTransactionType)
+            .compactMap { TransactionType(rawValue: Int16($0)) }
+            .bind(to: viewModel.input.transactionType)
             .disposed(by: disposeBag)
         
         periodSegmentedControl.selectedIndex
@@ -220,8 +219,7 @@ private extension MainViewController {
         viewModel.output.sections
             .subscribe(with: self) { controller, sections in
                 controller.noTransactionLabel.isHidden = !sections.isEmpty
-                controller.sections = sections
-                controller.transactionTableView.reloadData()
+                controller.applyTransactionSnapshot(with: sections)
             }
             .disposed(by: disposeBag)
         
@@ -271,28 +269,32 @@ private extension MainViewController {
     }
 }
 
-// MARK: - UITableViewDelegate, UITableViewDataSource
-extension MainViewController: UITableViewDelegate, UITableViewDataSource {
-    func numberOfSections(in tableView: UITableView) -> Int {
-        sections.count
+// MARK: - UITableViewDiffableDataSource, UITableViewDelegate
+extension MainViewController: UITableViewDelegate {
+    private func setupTransactionDataSource() {
+        transactionDataSource = .init(tableView: transactionTableView) { tableView, indexPath, transaction in
+            guard let cell = tableView.dequeueReusableCell(
+                withIdentifier: String(describing: TransactionRowCell.self),
+                for: indexPath) as? TransactionRowCell else { return UITableViewCell() }
+            
+            cell.configure(with: transaction)
+            cell.selectionStyle = .none
+            
+            return cell
+        }
     }
     
-    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        sections[section].transactions.count
-    }
-    
-    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        guard let cell = tableView.dequeueReusableCell(
-            withIdentifier: String(describing: TransactionRowCell.self),
-            for: indexPath) as? TransactionRowCell else {
-            return UITableViewCell()
+    private func applyTransactionSnapshot(with sections: [TransactionSection]) {
+        guard let transactionDataSource else { return }
+        
+        var snapshot: NSDiffableDataSourceSnapshot<TransactionSection, TransactionDomainModel> = .init()
+        snapshot.appendSections(sections)
+        
+        for section in sections {
+            snapshot.appendItems(section.transactions, toSection: section)
         }
         
-        let section = sections[indexPath.section]
-        cell.configure(with: section.transactions[indexPath.row])
-        cell.selectionStyle = .none
-        
-        return cell
+        transactionDataSource.apply(snapshot, animatingDifferences: true)
     }
     
     func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
@@ -300,14 +302,19 @@ extension MainViewController: UITableViewDelegate, UITableViewDataSource {
             withIdentifier: String(describing: TransactionsHeaderView.self)
         ) as? TransactionsHeaderView else { return nil }
         
+        guard let dataSource = transactionDataSource else { return nil }
+        let snapshot = dataSource.snapshot()
+        let sectionIdentifiers = snapshot.sectionIdentifiers
+        let currentSection = sectionIdentifiers[section]
+        
         header.backgroundConfiguration = UIBackgroundConfiguration.listPlainHeaderFooter()
         header.backgroundConfiguration?.backgroundColor = .appBackground
         
         header.configure(
-            categoryName: sections[section].categoryName,
-            percentage: sections[section].percentage,
-            amount: sections[section].transactions.reduce(.zero) { $0 + $1.amount },
-            color: sections[section].transactions.first?.category?.color
+            categoryName: currentSection.categoryName,
+            percentage: currentSection.percentage,
+            amount: currentSection.transactions.reduce(.zero) { $0 + $1.amount },
+            color: currentSection.transactions.first?.category?.color
         )
         
         return header
@@ -343,7 +350,8 @@ private extension MainViewController {
     
     func setConstraints() {
         NSLayoutConstraint.activate([
-            accountsCollectionView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: Constants.Layout.defaultPadding),
+            accountsCollectionView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor,
+                                                        constant: Constants.Layout.defaultPadding),
             accountsCollectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor,
                                                         constant: Constants.Layout.defaultPadding),
             accountsCollectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor,
@@ -355,7 +363,8 @@ private extension MainViewController {
                                                        constant: Constants.Layout.defaultPadding / 2),
             previousPeriodButton.widthAnchor.constraint(equalToConstant: Constants.Layout.periodButtonSize),
             
-            circleDiagramView.view.topAnchor.constraint(equalTo: accountsCollectionView.bottomAnchor, constant: Constants.Layout.defaultVerticalPadding),
+            circleDiagramView.view.topAnchor.constraint(equalTo: accountsCollectionView.bottomAnchor,
+                                                        constant: Constants.Layout.defaultVerticalPadding),
             circleDiagramView.view.leadingAnchor.constraint(equalTo: previousPeriodButton.trailingAnchor,
                                                         constant: Constants.Layout.defaultPadding / 2),
             circleDiagramView.view.trailingAnchor.constraint(equalTo: nextPeriodButton.leadingAnchor,
@@ -366,12 +375,15 @@ private extension MainViewController {
                                                          constant: -Constants.Layout.defaultPadding / 2),
             nextPeriodButton.widthAnchor.constraint(equalToConstant: Constants.Layout.periodButtonSize),
             
-            periodLabel.topAnchor.constraint(equalTo: circleDiagramView.view.bottomAnchor, constant: Constants.Layout.defaultVerticalPadding),
+            periodLabel.topAnchor.constraint(equalTo: circleDiagramView.view.bottomAnchor,
+                                             constant: Constants.Layout.defaultVerticalPadding),
             periodLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             
             topConstraintPeriodSegmentedControl,
-            periodSegmentedControl.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.Layout.defaultPadding),
-            periodSegmentedControl.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.Layout.defaultPadding),
+            periodSegmentedControl.leadingAnchor.constraint(equalTo: view.leadingAnchor,
+                                                            constant: Constants.Layout.defaultPadding),
+            periodSegmentedControl.trailingAnchor.constraint(equalTo: view.trailingAnchor,
+                                                             constant: -Constants.Layout.defaultPadding),
             
             transactionsBackgroundView.topAnchor.constraint(equalTo: periodSegmentedControl.bottomAnchor,
                                                             constant: Constants.Layout.defaultPadding),

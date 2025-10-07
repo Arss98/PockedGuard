@@ -12,6 +12,22 @@ final class CategoriesViewController: BaseViewController {
     // MARK: - UI elements
     private lazy var financeSegmentedControl: CustomSegmentedControl = .init(items: Constants.SegmentedControl.financeItems)
     
+    private lazy var scrollView: UIScrollView = {
+        let scrollView: UIScrollView = .init()
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.showsVerticalScrollIndicator = false
+        scrollView.alwaysBounceVertical = true
+        scrollView.contentInset = .init(top: Constants.Layout.verticalPadding, left: .zero,
+                                        bottom: Constants.Layout.scrollInset, right: .zero)
+        return scrollView
+    }()
+    
+    private lazy var contentView: UIView = {
+        let view: UIView = .init()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
+    }()
+    
     private lazy var accountLabel: UILabel = {
         let label: UILabel = .init()
         label.translatesAutoresizingMaskIntoConstraints = false
@@ -28,6 +44,8 @@ final class CategoriesViewController: BaseViewController {
         layout.estimatedItemSize = CGSize(width: Constants.Layout.accountsCellWidth,
                                           height: Constants.Layout.accountsCellHeight)
         layout.itemSize = UICollectionViewFlowLayout.automaticSize
+        layout.sectionInset = .init(top: .zero, left: Constants.Layout.padding,
+                                    bottom: .zero, right: Constants.Layout.padding)
         
         let collection: UICollectionView = .init(frame: .zero, collectionViewLayout: layout)
         collection.translatesAutoresizingMaskIntoConstraints = false
@@ -99,9 +117,9 @@ final class CategoriesViewController: BaseViewController {
         let layout: LeftAlignedCollectionViewFlowLayout = .init()
         layout.scrollDirection = .vertical
         layout.minimumInteritemSpacing = Constants.Layout.collectionSpacing
-        layout.estimatedItemSize = CGSize(width: Constants.Layout.templatesCellSize,
-                                          height: Constants.Layout.templatesCellSize)
-        layout.itemSize = UICollectionViewFlowLayout.automaticSize
+        layout.minimumLineSpacing = Constants.Layout.collectionSpacing
+        layout.sectionInset = .init(top: Constants.Layout.spacing / 2, left: Constants.Layout.padding,
+                                    bottom: Constants.Layout.spacing / 2, right: Constants.Layout.padding)
         
         let collection: UICollectionView = .init(frame: .zero, collectionViewLayout: layout)
         collection.translatesAutoresizingMaskIntoConstraints = false
@@ -123,6 +141,9 @@ final class CategoriesViewController: BaseViewController {
     }()
     
     // MARK: - Properties
+    private var accountsDataSource: UICollectionViewDiffableDataSource<Int, AccountItemType>?
+    private var categoriesDataSource: UICollectionViewDiffableDataSource<Int, CategoryItemType>?
+    private var templatesDataSource: UICollectionViewDiffableDataSource<Int, TemplatesItemType>?
     private let viewModel: CategoriesViewModelProtocol
     
     // MARK: - Init
@@ -135,137 +156,65 @@ final class CategoriesViewController: BaseViewController {
         fatalError("init(coder:) has not been implemented")
     }
     
-    // MARK: Lifecycle
+    // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
         setConstraints()
-        setupBindings()
+        setupDataSource()
         setupDelegates()
+        setupBindings()
     }
 }
 
 // MARK: - Binding methods
 private extension CategoriesViewController {
     func setupBindings() {
-        setupInputBindings()
+        setupInputBinding()
         setupOutputBindings()
     }
     
-    func setupInputBindings() {
+    func setupInputBinding() {
         financeSegmentedControl.selectedIndex
-            .map { TransactionType(rawValue: Int16($0)) }
+            .compactMap { TransactionType(rawValue: Int16($0)) }
+            .observe(on: MainScheduler.asyncInstance)
             .bind(to: viewModel.input.transactionType)
             .disposed(by: disposeBag)
     }
     
     func setupOutputBindings() {
         viewModel.output.accounts
-            .asDriver(onErrorJustReturn: [])
-            .drive(accountsCollectionView.rx.items) { [weak self] collectionView, row, item in
-                guard let self else { return UICollectionViewCell() }
-                switch item {
-                case .account(let account):
-                    guard let cell = collectionView.dequeueReusableCell(
-                        withReuseIdentifier: String(describing: AccountViewCell.self),
-                        for: IndexPath(row: row, section: .zero)) as? AccountViewCell else {
-                        return UICollectionViewCell()
-                    }
-                    cell.configure(title: account.name, amount: account.balance, currency: account.currency)
-                    cell.isUserInteractionEnabled = false
-                    return cell
-                case .add:
-                    guard let cell = collectionView.dequeueReusableCell(
-                        withReuseIdentifier: String(describing: AddAccountCell.self),
-                        for: IndexPath(row: row, section: .zero)) as? AddAccountCell else {
-                        return UICollectionViewCell()
-                    }
-                    cell.addAccountTap
-                        .bind(to: self.viewModel.input.addAccountTapped)
-                        .disposed(by: self.disposeBag)
-                    return cell
-                }
-            }
-            .disposed(by: disposeBag)
-        
-        viewModel.output.templates
-            .asDriver(onErrorJustReturn: [])
-            .drive(templatesCollectionView.rx.items) { [weak self] collectionView, row, item in
-                guard let self else { return UICollectionViewCell()}
-                switch item {
-                case .template(let template):
-                    guard let cell = collectionView.dequeueReusableCell(
-                        withReuseIdentifier: String(describing: TemplatesCellView.self),
-                        for: IndexPath(row: row, section: .zero)) as? TemplatesCellView else {
-                        return UICollectionViewCell()
-                    }
-                    cell.configure(with: template.icon)
-                    cell.isUserInteractionEnabled = false
-                    return cell
-                case .add:
-                    guard let cell = collectionView.dequeueReusableCell(
-                        withReuseIdentifier: String(describing: AddTemplateCell.self),
-                        for: IndexPath(row: row, section: .zero)) as? AddTemplateCell else {
-                        return UICollectionViewCell()
-                    }
-                    cell.addTemplateTap
-                        .bind(to: self.viewModel.input.addTemplateTapped)
-                        .disposed(by: self.disposeBag)
-                    return cell
-                }
-            }
+            .observe(on: MainScheduler.asyncInstance)
+            .subscribe(onNext: { [weak self] accounts in
+                self?.applyAccountSnapshot(accounts: accounts)
+            })
             .disposed(by: disposeBag)
         
         viewModel.output.categories
-            .asDriver(onErrorJustReturn: [])
-            .drive(categoriesCollectionView.rx.items) { [weak self] collectionView, row, item in
-                guard let self else { return UICollectionViewCell() }
-                switch item {
-                case .category(let category):
-                    guard let cell = collectionView.dequeueReusableCell(
-                        withReuseIdentifier: String(describing: CategoriesViewCell.self),
-                        for: IndexPath(row: row, section: .zero)) as? CategoriesViewCell else {
-                        return UICollectionViewCell()
-                    }
-                    cell.configure(title: category.name, color: category.color)
-                    cell.isUserInteractionEnabled = false
-                    return cell
-                case .add:
-                    guard let cell = collectionView.dequeueReusableCell(
-                        withReuseIdentifier: String(describing: AddCategoryCell.self),
-                        for: IndexPath(row: row, section: .zero)) as? AddCategoryCell else {
-                        return UICollectionViewCell()
-                    }
-                    cell.addCategoryTap
-                        .bind(to: self.viewModel.input.addCategoryTapped)
-                        .disposed(by: self.disposeBag)
-                    return cell
-                }
-            }
-            .disposed(by: disposeBag)
-
-        
-        viewModel.output.accounts
-            .subscribe { [weak self] _ in
-                self?.accountsCollectionView.reloadData()
-            }
-            .disposed(by: disposeBag)
-        
-        viewModel.output.categories
-            .subscribe { [weak self] _ in
-                self?.updateCategoriesCollectionViewHeight()
-            }
+            .observe(on: MainScheduler.asyncInstance)
+            .subscribe(onNext: { [weak self] categories in
+                self?.applyCategoriesSnapshot(categories: categories)
+                self?.updateCategoriesCollectionViewHeight(numberOfItems: categories.count)
+            })
             .disposed(by: disposeBag)
         
         viewModel.output.templates
-            .subscribe { [weak self] _ in
-                self?.updateTemplatesCollectionViewHeight()
-            }
+            .observe(on: MainScheduler.asyncInstance)
+            .subscribe(onNext: { [weak self] templates in
+                self?.applyTemplatesSnapchot(templates: templates)
+                self?.updateTemplatesCollectionViewHeight(numberOfItems: templates.count)
+            })
             .disposed(by: disposeBag)
         
         viewModel.output.isLoading
             .subscribe(onNext: { [weak self] isLoading in
                 self?.showActivityIndicator(isLoading)
+            })
+            .disposed(by: disposeBag)
+        
+        viewModel.output.error
+            .subscribe(onNext: { [weak self] error in
+                self?.showErrorAlert(message: error.localizedDescription)
             })
             .disposed(by: disposeBag)
         
@@ -369,6 +318,126 @@ extension CategoriesViewController: UICollectionViewDelegate {
     }
 }
 
+// MARK: - UICollectionViewDiffableDataSource methods
+private extension CategoriesViewController {
+    func setupDataSource() {
+        setupAccountDataSource()
+        setupCategoriesDataSource()
+        setupTemplatesDataSource()
+    }
+    
+    func setupAccountDataSource() {
+        accountsDataSource = .init(collectionView: accountsCollectionView)
+        { [weak self] collectionView, indexPath, item in
+            guard let self else { return UICollectionViewCell() }
+            switch item {
+            case .account(let account):
+                guard let cell = collectionView.dequeueReusableCell(
+                    withReuseIdentifier: String(describing: AccountViewCell.self),
+                    for: indexPath) as? AccountViewCell else {
+                    return UICollectionViewCell()
+                }
+                cell.configure(title: account.name, amount: account.balance, currency: account.currency)
+                cell.isUserInteractionEnabled = false
+                return cell
+            case .add:
+                guard let cell = collectionView.dequeueReusableCell(
+                    withReuseIdentifier: String(describing: AddAccountCell.self),
+                    for: indexPath) as? AddAccountCell else {
+                    return UICollectionViewCell()
+                }
+                cell.addAccountTap
+                    .bind(to: self.viewModel.input.addAccountTapped)
+                    .disposed(by: cell.disposeBag)
+                return cell
+            }
+        }
+    }
+    
+    func applyAccountSnapshot(accounts: [AccountItemType]) {
+        guard let accountsDataSource else { return }
+        
+        var snapshot: NSDiffableDataSourceSnapshot<Int, AccountItemType> = .init()
+        snapshot.appendSections([.zero])
+        snapshot.appendItems(accounts)
+        accountsDataSource.apply(snapshot, animatingDifferences: true)
+    }
+    
+    func setupCategoriesDataSource() {
+        categoriesDataSource = .init(collectionView: categoriesCollectionView)
+        { [weak self] collectionView, indexPath, item in
+            guard let self else { return UICollectionViewCell() }
+            switch item {
+            case .category(let category):
+                guard let cell = collectionView.dequeueReusableCell(
+                    withReuseIdentifier: String(describing: CategoriesViewCell.self),
+                    for: indexPath) as? CategoriesViewCell else {
+                    return UICollectionViewCell()
+                }
+                cell.configure(title: category.name, color: category.color)
+                cell.isUserInteractionEnabled = false
+                return cell
+            case .add:
+                guard let cell = collectionView.dequeueReusableCell(
+                    withReuseIdentifier: String(describing: AddCategoryCell.self),
+                    for: indexPath) as? AddCategoryCell else {
+                    return UICollectionViewCell()
+                }
+                cell.addCategoryTap
+                    .bind(to: self.viewModel.input.addCategoryTapped)
+                    .disposed(by: cell.disposeBag)
+                return cell
+            }
+        }
+    }
+    
+    func applyCategoriesSnapshot(categories: [CategoryItemType]) {
+        guard let categoriesDataSource else { return }
+        
+        var snapshot: NSDiffableDataSourceSnapshot<Int, CategoryItemType> = .init()
+        snapshot.appendSections([.zero])
+        snapshot.appendItems(categories)
+        categoriesDataSource.apply(snapshot, animatingDifferences: true)
+    }
+    
+    func setupTemplatesDataSource() {
+        templatesDataSource = .init(collectionView: templatesCollectionView)
+        { [weak self] collectionView, indexPath, item in
+            guard let self else { return UICollectionViewCell()}
+            switch item {
+            case .template(let template):
+                guard let cell = collectionView.dequeueReusableCell(
+                    withReuseIdentifier: String(describing: TemplatesCellView.self),
+                    for: indexPath) as? TemplatesCellView else {
+                    return UICollectionViewCell()
+                }
+                cell.configure(with: template.icon)
+                cell.isUserInteractionEnabled = false
+                return cell
+            case .add:
+                guard let cell = collectionView.dequeueReusableCell(
+                    withReuseIdentifier: String(describing: AddTemplateCell.self),
+                    for: indexPath) as? AddTemplateCell else {
+                    return UICollectionViewCell()
+                }
+                cell.addTemplateTap
+                    .bind(to: self.viewModel.input.addTemplateTapped)
+                    .disposed(by: cell.disposeBag)
+                return cell
+            }
+        }
+    }
+    
+    func applyTemplatesSnapchot(templates: [TemplatesItemType]) {
+        guard let templatesDataSource else { return }
+        
+        var snapshot: NSDiffableDataSourceSnapshot<Int, TemplatesItemType> = .init()
+        snapshot.appendSections([.zero])
+        snapshot.appendItems(templates)
+        templatesDataSource.apply(snapshot, animatingDifferences: true)
+    }
+}
+
 // MARK: - Alert Methods
 private extension CategoriesViewController {
     func showSystemCategoryAlert(category: CategoryDomainModel, action: CategoriesViewModel.CategoryAction) {
@@ -383,6 +452,7 @@ private extension CategoriesViewController {
             message: String(format: .Localized.Alert.systemCategoryMessage.localized, category.name, actionTitle),
             preferredStyle: .alert
         )
+        alert.overrideUserInterfaceStyle = .dark
         
         let cancelAction: UIAlertAction = .init(
             title: String.Localized.Common.cancel.localized,
@@ -407,73 +477,98 @@ private extension CategoriesViewController {
 private extension CategoriesViewController {
     func setupUI() {
         title = .Localized.Common.categoriesTitle.localized
-        [financeSegmentedControl, accountLabel, accountsCollectionView, categoryLabel,
-         categoriesCollectionView, templateLabel, templatesCollectionView].forEach { view.addSubview($0) }
+        
+        view.addSubview(financeSegmentedControl)
+        view.addSubview(scrollView)
+        scrollView.addSubview(contentView)
+        
+        [accountLabel, accountsCollectionView, categoryLabel,
+         categoriesCollectionView, templateLabel, templatesCollectionView].forEach { contentView.addSubview($0) }
     }
     
-    func updateCategoriesCollectionViewHeight() {
-        let numberOfItems: Int = viewModel.output.categories.value.count
+    func updateCategoriesCollectionViewHeight(numberOfItems: Int) {
         let rows: CGFloat = ceil(CGFloat(numberOfItems) / 2)
-        let height: CGFloat = rows * Constants.Layout.categoriesCellHeight + (rows - 1) * Constants.Layout.collectionSpacing
-        
-        categoriesCollectionHeight.constant = height
-        view.layoutIfNeeded()
+        let height: CGFloat = max(0, rows * Constants.Layout.categoriesCellHeight + (rows - 1) * Constants.Layout.collectionSpacing)
+    
+        UIView.animate(withDuration: Constants.Animation.duration) {
+            self.categoriesCollectionHeight.constant = height
+            self.view.layoutIfNeeded()
+        }
     }
     
-    func updateTemplatesCollectionViewHeight() {
-        let numberOfItems = viewModel.output.templates.value.count
-        let rows = ceil(CGFloat(numberOfItems) / 5)
-        let height = rows * Constants.Layout.templatesCellSize + (rows - 1) * Constants.Layout.collectionSpacing
+    func updateTemplatesCollectionViewHeight(numberOfItems: Int) {
+        guard let layout = templatesCollectionView.collectionViewLayout as? LeftAlignedCollectionViewFlowLayout,
+              numberOfItems > 0 else {
+            templatesCollectionHeight.constant = 0
+            return
+        }
         
-        templatesCollectionHeight.constant = height
-        view.layoutIfNeeded()
+        let itemsPerRow: CGFloat = 5
+        let rows: CGFloat = ceil(CGFloat(numberOfItems) / itemsPerRow)
+        let itemHeight: CGFloat = layout.itemSize.height
+        let totalLineSpacing: CGFloat = layout.minimumLineSpacing * (rows - 1)
+        let totalSectionInset: CGFloat = layout.sectionInset.top + layout.sectionInset.bottom
+        
+        let height: CGFloat = (rows * itemHeight) + totalLineSpacing + totalSectionInset
+        
+        UIView.animate(withDuration: Constants.Animation.duration) {
+            self.templatesCollectionHeight.constant = height
+            self.view.layoutIfNeeded()
+        }
     }
     
     func setConstraints() {
-        categoriesCollectionHeight.isActive = true
-        templatesCollectionHeight.isActive = true
-        
         NSLayoutConstraint.activate([
             financeSegmentedControl.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
             financeSegmentedControl.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             financeSegmentedControl.widthAnchor.constraint(equalToConstant: Constants.Layout.segmentControlWidth),
             
-            accountLabel.topAnchor.constraint(equalTo: financeSegmentedControl.bottomAnchor,
-                                              constant: Constants.Layout.verticalPadding),
-            accountLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor,
+            scrollView.topAnchor.constraint(equalTo: financeSegmentedControl.bottomAnchor),
+            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            scrollView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
+            
+            contentView.topAnchor.constraint(equalTo: scrollView.topAnchor),
+            contentView.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor),
+            contentView.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor),
+            contentView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
+            contentView.widthAnchor.constraint(equalTo: scrollView.widthAnchor),
+            
+            accountLabel.topAnchor.constraint(equalTo: contentView.topAnchor),
+            accountLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor,
                                                   constant: Constants.Layout.padding),
-            accountLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor,
+            accountLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor,
                                                    constant: -Constants.Layout.padding),
             
             accountsCollectionView.topAnchor.constraint(equalTo: accountLabel.bottomAnchor,
                                                         constant: Constants.Layout.collectionSpacing),
-            accountsCollectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor,
-                                                            constant: Constants.Layout.padding),
-            accountsCollectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor,
-                                                             constant: -Constants.Layout.padding),
-            accountsCollectionView.heightAnchor.constraint(equalToConstant: Constants.Layout.accountsCellHeight),
+            accountsCollectionView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+            accountsCollectionView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+            accountsCollectionView.heightAnchor.constraint(equalToConstant: Constants.Layout.accountsCollectionViewHeight),
             
             categoryLabel.topAnchor.constraint(equalTo: accountsCollectionView.bottomAnchor,
                                                constant: Constants.Layout.verticalPadding),
-            categoryLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor,
+            categoryLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor,
                                                    constant: Constants.Layout.padding),
             
             categoriesCollectionView.topAnchor.constraint(equalTo: categoryLabel.bottomAnchor,
                                                           constant: Constants.Layout.spacing),
-            categoriesCollectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            categoriesCollectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            categoriesCollectionView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+            categoriesCollectionView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+            categoriesCollectionHeight,
             
             templateLabel.topAnchor.constraint(equalTo: categoriesCollectionView.bottomAnchor,
                                                constant: Constants.Layout.verticalPadding),
-            templateLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor,
+            templateLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor,
                                                    constant: Constants.Layout.padding),
             
             templatesCollectionView.topAnchor.constraint(equalTo: templateLabel.bottomAnchor,
                                                          constant: Constants.Layout.spacing),
-            templatesCollectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor,
-                                                             constant: Constants.Layout.padding),
-            templatesCollectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor,
-                                                              constant: -Constants.Layout.padding)
+            templatesCollectionView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+            templatesCollectionView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+            templatesCollectionView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor,
+                                                            constant: -Constants.Layout.padding * 2),
+            templatesCollectionHeight
         ])
     }
 }
@@ -488,9 +583,15 @@ private enum Constants {
         static let collectionSpacing: CGFloat = 12
         static let categoriesCellHeight: CGFloat = 44
         static let templatesCellSize: CGFloat = 60
-        static let accountsCellHeight: CGFloat = 60
+        static let accountsCellHeight: CGFloat = 54
+        static let accountsCollectionViewHeight: CGFloat = 60
         static let accountsCellWidth: CGFloat = 160
         static let accountsCollectionSpacing: CGFloat = 8
+        static let scrollInset: CGFloat = 48
+    }
+    
+    enum Animation {
+        static let duration: TimeInterval = 0.3
     }
     
     enum Text {

@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct TransactionSection {
+struct TransactionSection: Hashable {
     let categoryName: String
     let percentage: String
     let transactions: [TransactionDomainModel]

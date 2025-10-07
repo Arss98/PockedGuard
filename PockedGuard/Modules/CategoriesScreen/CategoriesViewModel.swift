@@ -83,7 +83,6 @@ private extension CategoriesViewModel {
         input.confirmCategoryAction
             .subscribe(onNext: { [weak self] data in
                 self?.executeCategoryAction(data.category, action: data.action)
-                
             })
             .disposed(by: disposeBag)
     }
@@ -173,7 +172,7 @@ private extension CategoriesViewModel {
 // MARK: - Input, Output
 extension CategoriesViewModel {
     struct Input {
-        let transactionType: BehaviorRelay<TransactionType?> = .init(value: nil)
+        let transactionType: BehaviorRelay<TransactionType> = .init(value: .expense)
         let addCategoryTapped: PublishSubject<Void> = .init()
         let editCategoryTapped: PublishSubject<CategoryDomainModel> = .init()
         let addAccountTapped: PublishSubject<Void> = .init()

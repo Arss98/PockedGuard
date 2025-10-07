@@ -27,20 +27,29 @@ final class CustomSegmentedControl: UIView {
         return stackView
     }()
     
-    // MARK: - Properties
+    private lazy var leadingConstraint: NSLayoutConstraint = {
+        selectorView.leadingAnchor.constraint(equalTo: stackView.leadingAnchor)
+    }()
+    
+    // MARK: - Public properties
     let items: [String]
     var selectedIndex: Observable<Int> {
-        selectedIndexSubject.asObservable()
+        selectedIndexRelay.asObservable()
     }
     
-    private var leadingConstraint: NSLayoutConstraint?
+    var currentSelectedIndex: Int {
+        return selectedIndexRelay.value
+    }
+    
+    // MARK: - Private properties
     private var buttons: [UIButton] = []
     private let disposeBag: DisposeBag = .init()
-    private let selectedIndexSubject: BehaviorSubject<Int> = .init(value: .zero)
+    private let selectedIndexRelay: BehaviorRelay<Int>
     
     // MARK: - Init
-    init(items: [String]) {
+    init(items: [String], initialIndex: Int = 0) {
         self.items = items
+        self.selectedIndexRelay = BehaviorRelay<Int>(value: initialIndex)
         super.init(frame: .zero)
         setupUI()
         createButtons()
@@ -50,6 +59,27 @@ final class CustomSegmentedControl: UIView {
     
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+    
+    // MARK: - Public methods
+    func setSelectedIndex(_ index: Int) {
+        guard index >= 0 && index < items.count else { return }
+        
+        if selectedIndexRelay.value == index {
+            return
+        }
+        
+        self.layoutIfNeeded()
+        
+        let offset: CGFloat = stackView.arrangedSubviews[index].frame.origin.x
+        leadingConstraint.constant = offset
+        selectedIndexRelay.accept(index)
+        
+        if self.superview != nil {
+            UIView.animate(withDuration: Constants.animationDuration) {
+                self.layoutIfNeeded()
+            }
+        }
     }
 }
 
@@ -92,12 +122,12 @@ private extension CustomSegmentedControl {
     }
     
     func handleButtonTap(_ sender: UIButton) {
-        selectedIndexSubject.onNext(sender.tag)
+        selectedIndexRelay.accept(sender.tag)
         
         let offset: CGFloat = stackView.arrangedSubviews[sender.tag].frame.origin.x
         
         UIView.animate(withDuration: Constants.animationDuration) {
-            self.leadingConstraint?.constant = offset
+            self.leadingConstraint.constant = offset
             self.layoutIfNeeded()
         }
     }
@@ -115,11 +145,9 @@ private extension CustomSegmentedControl {
             
             selectorView.topAnchor.constraint(equalTo: stackView.topAnchor),
             selectorView.bottomAnchor.constraint(equalTo: stackView.bottomAnchor),
-            selectorView.widthAnchor.constraint(equalTo: stackView.widthAnchor, multiplier: 1 / CGFloat(items.count))
+            selectorView.widthAnchor.constraint(equalTo: stackView.widthAnchor, multiplier: 1 / CGFloat(items.count)),
+            leadingConstraint
         ])
-        
-        leadingConstraint = selectorView.leadingAnchor.constraint(equalTo: stackView.leadingAnchor)
-        leadingConstraint?.isActive = true
     }
 }
 

@@ -8,7 +8,11 @@
 import UIKit
 
 final class CircleView: UIView {
-    let lineWidth: CGFloat = 3
+    var lineWidth: CGFloat = 3 {
+        didSet {
+            setNeedsLayout()
+        }
+    }
     
     var strokeColor: UIColor = .systemBlue {
         didSet {
@@ -19,6 +23,7 @@ final class CircleView: UIView {
     override func layoutSubviews() {
         super.layoutSubviews()
         createCirclePath()
+        layer.cornerRadius = bounds.height / 2
     }
     
     private func createCirclePath() {

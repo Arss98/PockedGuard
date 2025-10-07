@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct TransactionDomainModel {
+struct TransactionDomainModel: Hashable {
     let id: UUID
     let amount: Double
     let date: Date
@@ -18,7 +18,7 @@ struct TransactionDomainModel {
     let account: AccountDomainModel?
 }
 
-enum TransactionType: Int16 {
+enum TransactionType: Int16, CaseIterable {
     case expense = 0
     case income = 1
 }

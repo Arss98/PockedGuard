@@ -1,28 +1,25 @@
 //
-//  AddCategoryCell.swift
+//  AddColorCell.swift
 //  PockedGuard
 //
-//  Created by Арсен Дадаев on 20.09.2025.
+//  Created by Арсен Дадаев on 24.09.2025.
 //
 
 import RxSwift
-import RxCocoa
 
-final class AddCategoryCell: UICollectionViewCell {
+final class AddColorCell: UICollectionViewCell {
     // MARK: - UI elements
     private lazy var addButton: UIButton = {
         let button: UIButton = .init(type: .system)
         button.translatesAutoresizingMaskIntoConstraints = false
-        button.setTitle(.Localized.Add.addCategory.localized, for: .normal)
-        button.titleLabel?.font = .systemFont(ofSize: Constants.Text.fontSize, weight: .regular)
+        button.setImage(UIImage(systemName: "plus"), for: .normal)
         button.tintColor = .white
         button.backgroundColor = .appMainBlue
-        button.layer.cornerRadius = Constants.Layout.cornerRadius
         return button
     }()
     
     // MARK: - properties
-    let addCategoryTap: PublishSubject<Void> = .init()
+    let addColorTap: PublishSubject<Void> = .init()
     var disposeBag: DisposeBag = .init()
     
     // MARK: - Init
@@ -41,10 +38,15 @@ final class AddCategoryCell: UICollectionViewCell {
         disposeBag = .init()
         setupBinding()
     }
+    
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        addButton.layer.cornerRadius = contentView.bounds.height / 2
+    }
 }
 
 // MARK: - Private methods
-private extension AddCategoryCell {
+private extension AddColorCell {
     func setupUI() {
         contentView.addSubview(addButton)
         
@@ -58,18 +60,7 @@ private extension AddCategoryCell {
     
     func setupBinding() {
         addButton.rx.tap
-            .bind(to: addCategoryTap)
+            .bind(to: addColorTap)
             .disposed(by: disposeBag)
-    }
-}
-
-// MARK: - Constants
-private enum Constants {
-    enum Layout {
-        static let cornerRadius: CGFloat = 10
-    }
-    
-    enum Text {
-        static let fontSize: CGFloat = 14
     }
 }

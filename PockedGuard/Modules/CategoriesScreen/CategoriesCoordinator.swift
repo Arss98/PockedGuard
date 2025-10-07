@@ -11,10 +11,13 @@ final class CategoriesCoordinator: Coordinator {
     var childCoordinators: [Coordinator] = []
     var navigationController: UINavigationController?
     private let dataProvider: DataProviderProtocol
+    private let colorStorageService: ColorStorageServiceProtocol
     private let disposeBag: DisposeBag = .init()
+    private var currentModalController: UIViewController?
     
     init(dataProvider: DataProviderProtocol) {
         self.dataProvider = dataProvider
+        self.colorStorageService = ColorStorageService()
         self.navigationController = .init()
     }
     
@@ -44,8 +47,9 @@ private extension CategoriesCoordinator {
             .disposed(by: disposeBag)
         
         viewModel.input.addCategoryTapped
-            .subscribe(onNext: { [weak self] in
-                self?.showCreateCategoryScreen()
+            .withLatestFrom(viewModel.input.transactionType)
+            .subscribe(onNext: { [weak self] transactionType in
+                self?.showCreateCategoryScreen(with: transactionType)
             })
             .disposed(by: disposeBag)
         
@@ -56,8 +60,9 @@ private extension CategoriesCoordinator {
             .disposed(by: disposeBag)
         
         viewModel.input.addTemplateTapped
-            .subscribe(onNext: { [weak self] in
-                self?.showCreateTemplateScreen()
+            .withLatestFrom(viewModel.input.transactionType)
+            .subscribe(onNext: { [weak self] TransactionType in
+                self?.showCreateTemplateScreen(with: TransactionType)
             })
             .disposed(by: disposeBag)
         
@@ -94,8 +99,12 @@ private extension CategoriesCoordinator {
             .disposed(by: disposeBag)
     }
     
-    func showCreateCategoryScreen() {
-        let viewModel: CreateCategoryViewModelProtocol = CreateCategoryViewModel(dataProvider: dataProvider)
+    func showCreateCategoryScreen(with transactionType: TransactionType) {
+        let viewModel: CreateCategoryViewModelProtocol = CreateCategoryViewModel(
+            initialTransactionType: transactionType,
+            dataProvider: dataProvider,
+            colorStorageService: colorStorageService
+        )
         let viewController: CreateCategoryViewController = .init(viewModel: viewModel)
         
         navigationController?.present(viewController, animated: true)
@@ -108,8 +117,12 @@ private extension CategoriesCoordinator {
     }
     
     func showEditCategoryScreen(with category: CategoryDomainModel) {
-        let viewModel: CreateCategoryViewModelProtocol = CreateCategoryViewModel(mode: .edit(category),
-                                                                                 dataProvider: dataProvider)
+        let viewModel: CreateCategoryViewModelProtocol = CreateCategoryViewModel(
+            mode: .edit(category),
+            initialTransactionType: category.type,
+            dataProvider: dataProvider,
+            colorStorageService: colorStorageService
+        )
         let viewController: CreateCategoryViewController = .init(viewModel: viewModel)
         
         navigationController?.present(viewController, animated: true)
@@ -121,12 +134,37 @@ private extension CategoriesCoordinator {
             .disposed(by: disposeBag)
     }
     
-    func showCreateTemplateScreen() {
+    func showCreateTemplateScreen(with transactionType: TransactionType) {
+        let viewModel: CreateTemplateViewModelProtocol = CreateTemplateViewModel(
+            initialTransactionType: transactionType,
+            dataProvider: dataProvider
+        )
+        let viewController: CreateTemplateViewController = .init(viewModel: viewModel)
         
+        navigationController?.present(viewController, animated: true)
+        
+        viewModel.output.dismiss
+            .subscribe(onNext: { [weak self] in
+                self?.finish()
+            })
+            .disposed(by: disposeBag)
     }
     
     func showEditTemplateScreen(with template: TemplateDomainModel) {
+        let viewModel: CreateTemplateViewModelProtocol = CreateTemplateViewModel(
+            mode: .edit(template),
+            initialTransactionType: template.type,
+            dataProvider: dataProvider
+        )
+        let viewController: CreateTemplateViewController = .init(viewModel: viewModel)
         
+        navigationController?.present(viewController, animated: true)
+        
+        viewModel.output.dismiss
+            .subscribe(onNext: { [weak self] in
+                self?.finish()
+            })
+            .disposed(by: disposeBag)
     }
     
     func finish() {

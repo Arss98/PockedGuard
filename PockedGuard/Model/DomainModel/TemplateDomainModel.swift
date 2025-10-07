@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct TemplateDomainModel {
+struct TemplateDomainModel: Hashable {
     let id: UUID
     let icon: String
     let amount: Double?

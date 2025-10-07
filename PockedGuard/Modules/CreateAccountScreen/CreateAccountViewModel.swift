@@ -58,6 +58,8 @@ private extension CreateAccountViewModel {
     
     func validateInput() throws {
         guard !input.title.value.isEmpty else { throw CustomError.invalidTitle }
+        
+        if let dublicateError = checkDublicateAccountName() { throw dublicateError}
     }
     
     func saveAccount() {
@@ -106,6 +108,27 @@ private extension CreateAccountViewModel {
         )
         .asCompletable()
     }
+    
+    func checkDublicateAccountName() -> CustomError? {
+        let currentName: String = input.title.value.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !currentName.isEmpty else { return nil }
+        
+        let accounts: [AccountDomainModel] = dataProvider.accounts.getAccounts()
+        
+        let dublicateAccount: AccountDomainModel? = accounts.first { account in
+            let existingName: String = account.name.trimmingCharacters(in: .whitespacesAndNewlines)
+            
+            if existingName.caseInsensitiveCompare(currentName) == .orderedSame {
+                if case .edit(let currentAccount) = mode {
+                    return account.id != currentAccount.id
+                }
+                return true
+            }
+            return false
+        }
+        
+        return dublicateAccount != nil ? .duplicateNameAccount : nil
+    }
 }
 
 // MARK: - Input, Output
@@ -126,11 +149,14 @@ extension CreateAccountViewModel {
 // MARK: - Error
 private enum CustomError: Error, LocalizedError {
     case invalidTitle
+    case duplicateNameAccount
     
     var errorDescription: String? {
         switch self {
         case .invalidTitle:
             return .Localized.Error.invalidNameAccount.localized
+        case .duplicateNameAccount:
+            return .Localized.Error.duplicateAccountName.localized
         }
     }
 }

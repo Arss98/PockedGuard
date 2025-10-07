@@ -40,6 +40,11 @@ extension String {
             case RUB
             case USD
             case EUR
+            case icon
+            case amount
+            case still
+            case wrap
+            case replace
         }
         
         enum Month {
@@ -80,7 +85,7 @@ extension String {
         }
         
         enum Add {
-            case amountPlaceholder
+            case amountZeroPlaceholder
             case descriptionPlaceholder
             case templatesTitle
             case templatesInfo
@@ -97,6 +102,8 @@ extension String {
             case categoryNameLabel
             case categoryNamePlaceholder
             case colorCategoryTitle
+            case amountPlaceholder
+            case templateAmountInfo
         }
         
         enum TransactionCategories {
@@ -136,11 +143,20 @@ extension String {
             case insufficientFunds
             case categoryNotSelectedError
             case invalidNameAccount
+            case invalidNameCategory
+            case emptyCategoryColor
+            case emptyTemplateIcon
+            case emptyTemplateCategoryOrAmount
+            case duplicateCategoryName
+            case duplicateAccountName
         }
         
         enum Alert {
             case systemCategoryTitle
             case systemCategoryMessage
+            case addColorMessage
+            case duplicateTemplateIconTitle
+            case duplicateTemplateIconMessage
         }
     }
 }
@@ -169,6 +185,11 @@ extension String.Localized.Common: Localizable {
         case .RUB: return "Currency.RUB"
         case .USD: return "Currency.USD"
         case .EUR: return "Currency.EUR"
+        case .icon: return "Icon"
+        case .amount: return "Amount"
+        case .still: return "Still"
+        case .wrap: return "Wrap"
+        case .replace: return "Replace"
         }
     }
 }
@@ -231,7 +252,7 @@ extension String.Localized.Notification: Localizable {
 extension String.Localized.Add: Localizable {
     var key: String {
         switch self {
-        case .amountPlaceholder: return "AddScreen.AmountPlaceholder"
+        case .amountZeroPlaceholder: return "AddScreen.AmountZeroPlaceholder"
         case .descriptionPlaceholder: return "AddScreen.DescriptionPlaceholder"
         case .templatesTitle: return "AddScreen.TemplatesLabelTitle"
         case .templatesInfo: return "AddScreen.TemplatesInfoLabel"
@@ -248,6 +269,8 @@ extension String.Localized.Add: Localizable {
         case .categoryNameLabel: return "Add.CategoryNameLabel"
         case .categoryNamePlaceholder: return "Add.CategoryNamePlaceholder"
         case .colorCategoryTitle: return "Add.ColorCategoryTitle"
+        case .amountPlaceholder: return "Add.AmountPlaceholder"
+        case .templateAmountInfo: return "Add.TemplateAmountInfo"
         }
     }
 }
@@ -300,8 +323,14 @@ extension String.Localized.Error: Localizable {
         case .accountFetchFailed: return "Error.AccountFetchFailed"
         case .dataFetchFailed: return "Error.DataFetchFailed"
         case .insufficientFunds: return "Error.InsufficientFunds"
-        case .categoryNotSelectedError: return "AddScreen.CategoryNotSelectedError"
-        case .invalidNameAccount: return "AddScreen.InvalidNameAccount"
+        case .categoryNotSelectedError: return "Error.CategoryNotSelectedError"
+        case .invalidNameAccount: return "Error.InvalidNameAccount"
+        case .invalidNameCategory: return "Error.InvalidNameCategory"
+        case .emptyCategoryColor: return "Error.EmptyCategoryColor"
+        case .emptyTemplateIcon: return "Error.EmptyTemplateIcon"
+        case .emptyTemplateCategoryOrAmount: return "Error.EmptyTemplateCategoryOrAmount"
+        case .duplicateCategoryName: return "Error.DuplicateCategoryName"
+        case .duplicateAccountName: return "Error.DuplicateAccountName"
         }
     }
 }
@@ -310,8 +339,11 @@ extension String.Localized.Error: Localizable {
 extension String.Localized.Alert: Localizable {
     var key: String {
         switch self {
-        case .systemCategoryTitle: "Alert.SystemCategoryTitle"
-        case .systemCategoryMessage: "Alert.systemCategoryMessage"
+        case .systemCategoryTitle: return "Alert.SystemCategoryTitle"
+        case .systemCategoryMessage: return "Alert.SystemCategoryMessage"
+        case .addColorMessage: return "Alert.AddColorMessage"
+        case .duplicateTemplateIconTitle: return "Alert.DuplicateTemplateIconTitle"
+        case .duplicateTemplateIconMessage: return "Alert.DuplicateTemplateIconMessage"
         }
     }
 }

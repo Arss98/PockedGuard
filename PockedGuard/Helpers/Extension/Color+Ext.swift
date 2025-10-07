@@ -12,18 +12,48 @@ extension UIColor {
         var formattedString = hexString.trimmingCharacters(in: .whitespacesAndNewlines)
         formattedString = formattedString.replacingOccurrences(of: "#", with: "")
         
-        guard formattedString.count == 6 else { return nil }
+        guard formattedString.count == 6 || formattedString.count == 8 else { return nil }
+        guard let hexValue = UInt64(formattedString, radix: 16) else { return nil }
         
-        guard let hexValue = Int(formattedString, radix: 16) else { return nil }
+        let red, green, blue, alphaComponent: CGFloat
         
-        let red = CGFloat((hexValue >> 16) & 0xFF) / 255.0
-        let green = CGFloat((hexValue >> 8) & 0xFF) / 255.0
-        let blue = CGFloat(hexValue & 0xFF) / 255.0
+        if formattedString.count == 8 {
+            red = CGFloat((hexValue >> 24) & 0xFF) / 255.0
+            green = CGFloat((hexValue >> 16) & 0xFF) / 255.0
+            blue = CGFloat((hexValue >> 8) & 0xFF) / 255.0
+            alphaComponent = CGFloat(hexValue & 0xFF) / 255.0
+        } else {
+            red = CGFloat((hexValue >> 16) & 0xFF) / 255.0
+            green = CGFloat((hexValue >> 8) & 0xFF) / 255.0
+            blue = CGFloat(hexValue & 0xFF) / 255.0
+            alphaComponent = alpha
+        }
         
-        self.init(red: red, green: green, blue: blue, alpha: alpha)
+        self.init(red: red, green: green, blue: blue, alpha: alphaComponent)
     }
 }
 
+
+extension UIColor {
+    func toHex() -> String? {
+        guard let components = cgColor.components, components.count >= 3 else {
+            return nil
+        }
+        
+        let red = components[0]
+        let green = components[1]
+        let blue = components[2]
+        let alpha = components.count >= 4 ? components[3] : 1.0
+        
+        let redInt = Int(round(red * 255))
+        let greenInt = Int(round(green * 255))
+        let blueInt = Int(round(blue * 255))
+        let alphaInt = Int(round(alpha * 255))
+        
+        let hexString = String(format: "#%02X%02X%02X%02X", redInt, greenInt, blueInt, alphaInt)
+        return hexString
+    }
+}
 
 import SwiftUI
 

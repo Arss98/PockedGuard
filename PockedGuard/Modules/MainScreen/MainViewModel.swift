@@ -51,7 +51,7 @@ extension MainViewModel {
 private extension MainViewModel {
     func setupBindings() {
         Observable.combineLatest(
-            input.currentTransactionType,
+            input.transactionType,
             input.selectedAccount,
             output.period
         )
@@ -59,7 +59,7 @@ private extension MainViewModel {
             viewModel.dataProvider.transaction.setFilters(type: tuple.0, accountId: tuple.1?.id, period: tuple.2)
         }
         .disposed(by: disposeBag)
-        
+
         input.nextPeriod
             .subscribe(with: self, onNext: { viewModel, _ in
                 let currentPeriod = viewModel.output.period.value
@@ -122,7 +122,7 @@ extension MainViewModel {
     struct Input {
         let selectedAccount: BehaviorRelay<AccountDomainModel?> = .init(value: nil)
         let showDatePickerTrigger: PublishRelay<Void> = .init()
-        let currentTransactionType: BehaviorRelay<TransactionType?> = .init(value: nil)
+        let transactionType: BehaviorRelay<TransactionType> = .init(value: .expense)
         let nextPeriod: PublishRelay<Void> = .init()
         let previousPeriod: PublishRelay<Void> = .init()
     }

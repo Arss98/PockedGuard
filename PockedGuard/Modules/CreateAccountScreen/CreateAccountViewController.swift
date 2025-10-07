@@ -126,7 +126,7 @@ private extension CreateAccountViewController {
     func updateLayoutForKeyboard(height: CGFloat) {
         doneButtonBottomConstraint.constant = -height
         
-        UIView.animate(withDuration: 0.3) {
+        UIView.animate(withDuration: Constants.Animation.duration) {
             self.view.layoutIfNeeded()
         }
     }
@@ -250,5 +250,9 @@ private enum Constants {
         static let defaultPadding: CGFloat = 16
         static let buttonCornerRadius: CGFloat = 10
         static let buttonHeight: CGFloat = 52
+    }
+    
+    enum Animation {
+         static let duration: TimeInterval = 0.3
     }
 }

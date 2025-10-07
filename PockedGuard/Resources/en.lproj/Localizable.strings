@@ -26,6 +26,11 @@
 "Currency.RUB" = "RUB";
 "Currency.USD" = "USD";
 "Currency.EUR" = "EUR";
+"Icon" = "Иконка";
+"Amount" = "Сумма";
+"Still" = "Еще";
+"Wrap" = "Свернуть";
+"Replace" = "Заменить";
 
 /* Month*/
 "Month.January" = "Январь";
@@ -65,10 +70,10 @@
 "NotificationScreen.EmptyLabel" = "Ваш список напоминаний пуст. Добавьте новые напоминания, чтобы ничего не забыть!";
 
 /*Add Screen*/
-"AddScreen.AmountPlaceholder" = "0";
+"AddScreen.AmountZeroPlaceholder" = "0";
 "AddScreen.DescriptionPlaceholder" = "Комментарий...";
 "AddScreen.TemplatesLabelTitle" = "Шаблоны операций";
-"AddScreen.TemplatesInfoLabel" = "Шаблоны — это готовые повторяющиеся операции";
+"AddScreen.TemplatesInfoLabel" = "Шаблоны — это готовые\nповторяющиеся операции";
 "AddScreen.TemplatesIsEmptyLabel" = "Список шаблонов пуст. Добавьте новые шаблоны, чтобы упросить добавление регулярных операций.";
 
 /* Add Categories, Accounts */
@@ -84,6 +89,8 @@
 "Add.CategoryNameLabel" = "Название категории";
 "Add.CategoryNamePlaceholder" = "Введите название категории";
 "Add.ColorCategoryTitle" = "Цвет категории";
+"Add.AmountPlaceholder" = "Введите сумму (не обязательно)";
+"Add.TemplateAmountInfo" =  "Укажите сумму, если хотите создать шаблон\nс фиксированной суммой транзакции.\nЕсли оставить поле пустым, сумму\nнужно будет вводить при каждой трате.";
 
 /*Transaction categories*/
 "TransactionCategories.Health" = "Здоровье";
@@ -120,7 +127,16 @@
 "Error.InsufficientFunds" = "Недостаточно средств на счете";
 "Error.CategoryNotSelectedError" = "Пожалуйста, выберите категорию.";
 "Error.InvalidNameAccount" = "Необходимо ввести название счета";
+"Error.InvalidNameCategory" = "Необходимо ввести название категории";
+"Error.EmptyCategoryColor" = "Необходимо выбрать цвет категории";
+"Error.EmptyTemplateIcon" = "Необходимо выбрать иконку шаблона";
+"Error.EmptyTemplateCategoryOrAmount" = "Необходимо выбрать категорию или ввести сумму";
+"Error.DuplicateCategoryName" = "Категория с таким названием уже существует";
+"Error.DuplicateAccountName" = "Счет с таким названием уже существует";
 
 /* Alerts */
 "Alert.SystemCategoryTitle" = "Системная категория";
-"Alert.systemCategoryMessage" = "Категория \"%@\" является системной. Вы уверены, что хотите %@ эту категорию?";
+"Alert.SystemCategoryMessage" = "Категория \"%@\" является системной. Вы уверены, что хотите %@ эту категорию?";
+"Alert.AddColorMessage" = "Цвет добавлен в палитру";
+"Alert.DuplicateTemplateIconTitle" = "Иконка уже используется";
+"Alert.DuplicateTemplateIconMessage" = "Обнаружен существующий шаблон с данной иконкой. Вы можете заменить его или выбрать другую иконку для нового шаблона.";

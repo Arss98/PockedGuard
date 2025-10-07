@@ -24,7 +24,7 @@ final class TransactionRepository: TransactionRepositoryProtocol {
     private let coreDataService: CoreDataServiceProtocol
     private let disposeBag: DisposeBag = .init()
     private let backgroundScheduler = ConcurrentDispatchQueueScheduler(qos: .userInitiated)
-    private let currentTransactionType: BehaviorRelay<TransactionType> = .init(value: .income)
+    private let currentTransactionType: BehaviorRelay<TransactionType> = .init(value: .expense)
     private let currentPeriod: BehaviorRelay<PeriodType> = .init(value: .day(start: Date()))
     private let currentAccountID: BehaviorRelay<UUID?> = .init(value: nil)
 
