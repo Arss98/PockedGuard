@@ -12,4 +12,5 @@ struct AccountDomainModel: Equatable, Hashable {
     let name: String
     let balance: Double
     let currency: CurrencyType
+    let isPrimary: Bool
 }

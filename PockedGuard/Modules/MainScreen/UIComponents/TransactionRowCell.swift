@@ -66,7 +66,9 @@ final class TransactionRowCell: UITableViewCell {
     func configure(with transaction: TransactionDomainModel) {
         dateLabel.text = DateFormatter.dateShort.string(from: transaction.date)
         descriptionLabel.text = transaction.notes
-        amountLabel.text = String(format: "%.0f% ₽", transaction.amount)
+        if let currency: String = transaction.account?.currency.symbol {
+            amountLabel.text = String(format: "%.0f% \(currency)", transaction.amount)
+        }
     }
 }
 
@@ -84,8 +86,8 @@ private extension TransactionRowCell {
             dotView.widthAnchor.constraint(equalToConstant: Constants.Layout.dotSize),
             dotView.heightAnchor.constraint(equalToConstant: Constants.Layout.dotSize),
             
-            dateLabel.topAnchor.constraint(equalTo: topAnchor, constant: Constants.Layout.padding),
-            dateLabel.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -Constants.Layout.padding),
+            dateLabel.topAnchor.constraint(equalTo: topAnchor),
+            dateLabel.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -Constants.Layout.padding * 2),
             dateLabel.leadingAnchor.constraint(equalTo: dotView.trailingAnchor, constant: Constants.Layout.spacing),
             
             descriptionLabel.trailingAnchor.constraint(lessThanOrEqualTo: amountLabel.leadingAnchor, constant: -Constants.Layout.spacing),
@@ -103,7 +105,7 @@ private enum Constants {
     enum Layout {
         static let dotSize: CGFloat = 8
         static let spacing: CGFloat = 8
-        static let padding: CGFloat = 16
+        static let padding: CGFloat = 8
     }
     
     enum Text {

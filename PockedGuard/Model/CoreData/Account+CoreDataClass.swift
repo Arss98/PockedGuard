@@ -22,6 +22,7 @@ extension Account {
     @NSManaged public var balance: Double
     @NSManaged public var currency: String?
     @NSManaged public var id: UUID?
+    @NSManaged public var isPrimary: Bool
     @NSManaged public var name: String?
     @NSManaged public var date: Date?
     @NSManaged public var transaction: NSSet?
@@ -53,7 +54,8 @@ extension Account: DomainConvertible {
             id: id ?? UUID(),
             name: name ?? "",
             balance: balance,
-            currency: CurrencyType(rawValue: currency ?? "") ?? CurrencyType.rub
+            currency: CurrencyType(rawValue: currency ?? "") ?? CurrencyType.rub,
+            isPrimary: isPrimary
         )
     }
 }

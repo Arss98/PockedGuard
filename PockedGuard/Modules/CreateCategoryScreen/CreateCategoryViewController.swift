@@ -69,7 +69,7 @@ final class CreateCategoryViewController: BaseViewController {
     
     private lazy var colorPicker: UIColorPickerViewController = {
         let picker: UIColorPickerViewController = .init()
-        picker.supportsAlpha = true
+        picker.supportsAlpha = false
         picker.delegate = self
         picker.overrideUserInterfaceStyle = .dark
         return picker
@@ -354,8 +354,10 @@ private extension CreateCategoryViewController {
             titleLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             
             closeButton.centerYAnchor.constraint(equalTo: titleLabel.centerYAnchor),
+            closeButton.widthAnchor.constraint(equalToConstant: Constants.Layout.defaultButtonSize),
+            closeButton.heightAnchor.constraint(equalToConstant: Constants.Layout.defaultButtonSize),
             closeButton.trailingAnchor.constraint(equalTo: view.trailingAnchor,
-                                                  constant: -Constants.Layout.defaultPadding),
+                                                  constant: -Constants.Layout.defaultPadding / 2),
             
             financeSegmentedControl.topAnchor.constraint(equalTo: titleLabel.bottomAnchor,
                                                          constant: Constants.Layout.defaultPadding),
@@ -407,6 +409,7 @@ private enum Constants {
         static let segmentControlWidth: CGFloat = 216
         static let circleSize: CGFloat = 36
         static let minimumLineSpacing: CGFloat = 11
+        static let defaultButtonSize: CGFloat = 44
     }
     
     enum SegmentedControl {

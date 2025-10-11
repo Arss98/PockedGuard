@@ -20,6 +20,7 @@ extension Localizable {
 extension String {
     enum Localized {
         enum Common {
+            case appName
             case today
             case period
             case cancel
@@ -45,6 +46,7 @@ extension String {
             case still
             case wrap
             case replace
+            case analytics
         }
         
         enum Month {
@@ -103,6 +105,7 @@ extension String {
             case categoryNamePlaceholder
             case colorCategoryTitle
             case amountPlaceholder
+            case setupIsPrimary
             case templateAmountInfo
         }
         
@@ -157,6 +160,16 @@ extension String {
             case addColorMessage
             case duplicateTemplateIconTitle
             case duplicateTemplateIconMessage
+            case primaryAccountTitle
+            case primaryAccountMessage
+        }
+        
+        enum Onboarding {
+            case welcomeTitle
+            case welcomeDescription
+            case analyticsDescription
+            case templatesDescription
+            case notificationDescription
         }
     }
 }
@@ -165,6 +178,7 @@ extension String {
 extension String.Localized.Common: Localizable {
     var key: String {
         switch self {
+        case .appName: return "AppName"
         case .today: return "Today"
         case .period: return "Period"
         case .cancel: return "Cancel"
@@ -190,6 +204,7 @@ extension String.Localized.Common: Localizable {
         case .still: return "Still"
         case .wrap: return "Wrap"
         case .replace: return "Replace"
+        case .analytics: return "Analytics"
         }
     }
 }
@@ -270,6 +285,7 @@ extension String.Localized.Add: Localizable {
         case .categoryNamePlaceholder: return "Add.CategoryNamePlaceholder"
         case .colorCategoryTitle: return "Add.ColorCategoryTitle"
         case .amountPlaceholder: return "Add.AmountPlaceholder"
+        case .setupIsPrimary: return "Add.SetupIsPrimary"
         case .templateAmountInfo: return "Add.TemplateAmountInfo"
         }
     }
@@ -344,6 +360,21 @@ extension String.Localized.Alert: Localizable {
         case .addColorMessage: return "Alert.AddColorMessage"
         case .duplicateTemplateIconTitle: return "Alert.DuplicateTemplateIconTitle"
         case .duplicateTemplateIconMessage: return "Alert.DuplicateTemplateIconMessage"
+        case .primaryAccountTitle: return "Alert.PrimaryAccountTitle"
+        case .primaryAccountMessage: return "Alert.PrimaryAccountMessage"
+        }
+    }
+}
+
+// MARK: - Onboarding
+extension String.Localized.Onboarding: Localizable {
+    var key: String {
+        switch self {
+        case .welcomeTitle: return "Onboarding.WelcomeTitle"
+        case .welcomeDescription: return "Onboarding.WelcomeDescription"
+        case .analyticsDescription: return "Onboarding.AnalyticsDescription"
+        case .templatesDescription: return "Onboarding.TemplatesDescription"
+        case .notificationDescription: return "Onboarding.NotificationDescription"
         }
     }
 }

@@ -205,6 +205,38 @@ extension BaseViewController {
         }
     }
     
+    func showConfirmationAlert(
+        title: String,
+        message: String,
+        confirmButtonTitle: String = .Localized.Common.resume.localized,
+        confirmButtonStyle: UIAlertAction.Style = .destructive,
+        confirmAction: @escaping () -> Void
+    ) {
+        let alert = UIAlertController(
+            title: title,
+            message: message,
+            preferredStyle: .alert
+        )
+        alert.overrideUserInterfaceStyle = .dark
+        
+        let cancelAction = UIAlertAction(
+            title: .Localized.Common.cancel.localized,
+            style: .cancel
+        )
+        
+        let confirmAction = UIAlertAction(
+            title: confirmButtonTitle,
+            style: confirmButtonStyle
+        ) { _ in
+            confirmAction()
+        }
+        
+        alert.addAction(cancelAction)
+        alert.addAction(confirmAction)
+        
+        present(alert, animated: true)
+    }
+    
     func showToast(message: String) {
         toastLabel.text = message
         showToastAnimation()

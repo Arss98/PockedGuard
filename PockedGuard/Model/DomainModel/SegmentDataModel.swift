@@ -7,10 +7,8 @@
 
 import Foundation
 
-struct SegmentDataModel {
+struct SegmentDataModel: Equatable {
     let value: CGFloat
     let color: String?
     let categoryName: String
-    
-    static let empty = SegmentDataModel(value: .zero, color: "", categoryName: "")
 }

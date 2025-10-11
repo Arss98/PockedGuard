@@ -52,9 +52,9 @@ final class TransactionsHeaderView: UITableViewHeaderFooterView {
     }
     
     // MARK: - Configure
-    func configure(categoryName: String, percentage: String, amount: Double, color: String?) {
+    func configure(categoryName: String, percentage: String, amount: Double, color: String?, currencySymbol: String) {
         titleLabel.text = categoryName
-        amountLabel.text = String(format: "%.0f% ₽", amount)
+        amountLabel.text = String(format: "%.0f% \(currencySymbol)", amount)
         percentageLabel.text = percentage
         
         if let color = color {
@@ -72,18 +72,19 @@ private extension TransactionsHeaderView {
     
     func setConstraints() {
         NSLayoutConstraint.activate([
-            circleView.centerYAnchor.constraint(equalTo: centerYAnchor),
+            circleView.topAnchor.constraint(equalTo: topAnchor, constant: Constants.Layout.padding / 2),
+            circleView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -Constants.Layout.padding),
             circleView.leadingAnchor.constraint(equalTo: leadingAnchor),
             circleView.widthAnchor.constraint(equalToConstant: Constants.Layout.circleSize),
             circleView.heightAnchor.constraint(equalToConstant: Constants.Layout.circleSize),
             
-            titleLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
+            titleLabel.centerYAnchor.constraint(equalTo: circleView.centerYAnchor),
             titleLabel.leadingAnchor.constraint(equalTo: circleView.trailingAnchor, constant: Constants.Layout.padding),
         
-            amountLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
+            amountLabel.centerYAnchor.constraint(equalTo: circleView.centerYAnchor),
             amountLabel.trailingAnchor.constraint(equalTo: trailingAnchor),
             
-            percentageLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
+            percentageLabel.centerYAnchor.constraint(equalTo: circleView.centerYAnchor),
             percentageLabel.trailingAnchor.constraint(equalTo: amountLabel.leadingAnchor, constant: -Constants.Layout.padding)
         ])
     }

@@ -28,8 +28,8 @@ final class MainViewModel: MainViewModelProtocol {
         self.dataProvider = dataProvider
         self.input = .init()
         self.output = .init()
-        setupBindings()
         setupRepositoryBindings()
+        setupBindings()
     }
 }
 
@@ -51,9 +51,9 @@ extension MainViewModel {
 private extension MainViewModel {
     func setupBindings() {
         Observable.combineLatest(
-            input.transactionType,
-            input.selectedAccount,
-            output.period
+            input.transactionType.distinctUntilChanged(),
+            input.selectedAccount.distinctUntilChanged(),
+            output.period.distinctUntilChanged()
         )
         .subscribe(with: self) { viewModel, tuple in
             viewModel.dataProvider.transaction.setFilters(type: tuple.0, accountId: tuple.1?.id, period: tuple.2)
@@ -75,18 +75,33 @@ private extension MainViewModel {
                 viewModel.output.period.accept(currentPeriod.previous)
             })
             .disposed(by: disposeBag)
+        
+        input.selectedAccount
+            .compactMap { $0 }
+            .subscribe(with: self) { viewModel, account in
+                let currency: String = account.currency.symbol
+                viewModel.output.currencySymbol.accept(currency)
+            }
+            .disposed(by: disposeBag)
     }
     
     func setupRepositoryBindings() {
-        dataProvider.transaction.transactions
-            .subscribe(with: self) { viewModel, transactions in
-                viewModel.groupTransactions(transactions)
+        dataProvider.accounts.accounts
+            .subscribe(with: self) { viewModel, accounts in
+                let currentSelectedAccount: AccountDomainModel? = viewModel.input.selectedAccount.value
+                if currentSelectedAccount == nil ||
+                    !accounts.contains(where: { $0.id == currentSelectedAccount?.id }) {
+                    let primaryAccount: AccountDomainModel? = accounts.first(where: { $0.isPrimary })
+                    viewModel.input.selectedAccount.accept(primaryAccount)
+                }
+                
+                viewModel.output.accounts.accept(accounts)
             }
             .disposed(by: disposeBag)
         
-        dataProvider.accounts.accounts
-            .subscribe(with: self) { viewModel, accounts in
-                viewModel.output.accounts.accept(accounts)
+        dataProvider.transaction.transactions
+            .subscribe(with: self) { viewModel, transactions in
+                viewModel.groupTransactions(transactions)
             }
             .disposed(by: disposeBag)
     }
@@ -100,7 +115,7 @@ private extension MainViewModel {
             let percentage: Double = (categoryAmount / totalAmount) * 100
             
             return TransactionSection(categoryName: key,percentage: String(format: "%.0f% %", percentage),
-                                      transactions: value)
+                                      transactions: value, currencySymbol: output.currencySymbol.value)
         }
         .sorted { $0.categoryName < $1.categoryName}
         
@@ -135,6 +150,7 @@ extension MainViewModel {
         let period: BehaviorRelay<PeriodType> = .init(value: .day())
         let error: PublishSubject<Error> = .init()
         let isLoading: BehaviorRelay<Bool> = .init(value: false)
+        let currencySymbol: BehaviorRelay<String> = .init(value: "₽")
     }
 }
 

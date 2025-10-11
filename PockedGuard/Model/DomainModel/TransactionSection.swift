@@ -11,4 +11,5 @@ struct TransactionSection: Hashable {
     let categoryName: String
     let percentage: String
     let transactions: [TransactionDomainModel]
+    let currencySymbol: String
 }

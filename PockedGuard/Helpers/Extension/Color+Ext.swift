@@ -43,14 +43,12 @@ extension UIColor {
         let red = components[0]
         let green = components[1]
         let blue = components[2]
-        let alpha = components.count >= 4 ? components[3] : 1.0
         
         let redInt = Int(round(red * 255))
         let greenInt = Int(round(green * 255))
         let blueInt = Int(round(blue * 255))
-        let alphaInt = Int(round(alpha * 255))
         
-        let hexString = String(format: "#%02X%02X%02X%02X", redInt, greenInt, blueInt, alphaInt)
+        let hexString = String(format: "#%02X%02X%02X", redInt, greenInt, blueInt)
         return hexString
     }
 }
@@ -64,10 +62,12 @@ extension Color {
             return
         }
         
-        let sanitizedHex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
+        let sanitizedHex = hex.trimmingCharacters(in: CharacterSet(charactersIn: "#").union(.whitespaces))
         var int: UInt64 = 0
         Scanner(string: sanitizedHex).scanHexInt64(&int)
+        
         let a, r, g, b: UInt64
+        
         switch sanitizedHex.count {
         case 3:
             (a, r, g, b) = (255, (int >> 8) * 17, (int >> 4 & 0xF) * 17, (int & 0xF) * 17)
@@ -78,6 +78,7 @@ extension Color {
         default:
             (a, r, g, b) = (255, 0, 0, 0)
         }
+        
         self.init(
             .sRGB,
             red: Double(r) / 255,
@@ -87,3 +88,4 @@ extension Color {
         )
     }
 }
+

@@ -223,6 +223,13 @@ private extension CategoriesViewController {
                 self?.showSystemCategoryAlert(category: data.category, action: data.action)
             })
             .disposed(by: disposeBag)
+        
+        viewModel.output.showPrimaryAccountAlert
+            .observe(on: MainScheduler.asyncInstance)
+            .subscribe(with: self) { controller, account in
+                controller.showPrimaryAccountAlert(account: account)
+            }
+            .disposed(by: disposeBag)
     }
 }
 
@@ -268,29 +275,34 @@ extension CategoriesViewController: UICollectionViewDelegate {
     
     private func createAccountContextMenu(_ account: AccountDomainModel) -> UIContextMenuConfiguration {
         return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { [weak self] _ in
-            let editAction = UIAction(title: .Localized.Common.edit.localized,
+            let editAction: UIAction = .init(title: .Localized.Common.edit.localized,
                                       image: UIImage(systemName: "pencil")) { _ in
                 self?.viewModel.input.editAccountTapped.onNext(account)
             }
             
-            let deleteAction = UIAction(title: .Localized.Common.delete.localized,
+            let setupPrimary: UIAction = .init(title: .Localized.Add.setupIsPrimary.localized,
+                                               image: UIImage(systemName: "checkmark.circle.fill")) { _ in
+                self?.viewModel.input.isPrimaryAccountTapped.onNext(account)
+            }
+            
+            let deleteAction: UIAction = .init(title: .Localized.Common.delete.localized,
                                         image: UIImage(systemName: "trash"),
                                         attributes: .destructive) { _ in
                 self?.viewModel.input.deleteAccountTapped.onNext(account.id)
             }
             
-            return UIMenu(title: "", children: [editAction, deleteAction])
+            return UIMenu(title: "", children: [editAction, setupPrimary, deleteAction])
         }
     }
     
     private func createCategoryContextMenu(_ category: CategoryDomainModel) -> UIContextMenuConfiguration {
         return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { [weak self] _ in
-            let editAction = UIAction(title: .Localized.Common.edit.localized,
+            let editAction: UIAction = .init(title: .Localized.Common.edit.localized,
                                       image: UIImage(systemName: "pencil")) { _ in
                 self?.viewModel.input.categoryAction.onNext((category, .edit))
             }
             
-            let deleteAction = UIAction(title: .Localized.Common.delete.localized,
+            let deleteAction: UIAction = .init(title: .Localized.Common.delete.localized,
                                         image: UIImage(named: "trash"),
                                         attributes: .destructive) { _ in
                 self?.viewModel.input.categoryAction.onNext((category, .delete))
@@ -302,12 +314,12 @@ extension CategoriesViewController: UICollectionViewDelegate {
     
     private func createTemplateContextMenu(_ template: TemplateDomainModel) -> UIContextMenuConfiguration {
         return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { [weak self] _ in
-            let editAction = UIAction(title: .Localized.Common.edit.localized,
+            let editAction: UIAction = .init(title: .Localized.Common.edit.localized,
                                       image: UIImage(systemName: "pencil")) { _ in
                 self?.viewModel.input.editTemplateTapped.onNext(template)
             }
             
-            let deleteAction = UIAction(title: .Localized.Common.delete.localized,
+            let deleteAction: UIAction = .init(title: .Localized.Common.delete.localized,
                                         image: UIImage(systemName: "trash"),
                                         attributes: .destructive) { _ in
                 self?.viewModel.input.deleteTemplateTapped.onNext(template.id)
@@ -447,29 +459,23 @@ private extension CategoriesViewController {
         case .edit: actionTitle = .Localized.Common.edit.localized
         }
         
-        let alert: UIAlertController = .init(
+        showConfirmationAlert(
             title: .Localized.Alert.systemCategoryTitle.localized,
             message: String(format: .Localized.Alert.systemCategoryMessage.localized, category.name, actionTitle),
-            preferredStyle: .alert
+            confirmAction: { [weak self] in
+                self?.viewModel.input.confirmCategoryAction.onNext((category, action))
+            }
         )
-        alert.overrideUserInterfaceStyle = .dark
-        
-        let cancelAction: UIAlertAction = .init(
-            title: String.Localized.Common.cancel.localized,
-            style: .cancel
+    }
+    
+    func showPrimaryAccountAlert(account: AccountDomainModel) {
+        showConfirmationAlert(
+            title: .Localized.Alert.primaryAccountTitle.localized,
+            message: String(format: .Localized.Alert.primaryAccountMessage.localized, account.name),
+            confirmAction: { [weak self] in
+                self?.viewModel.input.confirmSetPrimaryAccount.onNext(account)
+            }
         )
-        
-        let confirmAction: UIAlertAction = .init(
-            title: String.Localized.Common.resume.localized,
-            style: .destructive
-        ) { [weak self] _ in
-            self?.viewModel.input.confirmCategoryAction.onNext((category, action))
-        }
-        
-        alert.addAction(cancelAction)
-        alert.addAction(confirmAction)
-        
-        present(alert, animated: true)
     }
 }
 

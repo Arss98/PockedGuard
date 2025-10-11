@@ -503,8 +503,10 @@ private extension CreateTemplateViewController {
             titleLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             
             closeButton.centerYAnchor.constraint(equalTo: titleLabel.centerYAnchor),
+            closeButton.widthAnchor.constraint(equalToConstant: Constants.Layout.defaultButtonSize),
+            closeButton.heightAnchor.constraint(equalToConstant: Constants.Layout.defaultButtonSize),
             closeButton.trailingAnchor.constraint(equalTo: view.trailingAnchor,
-                                                  constant: -Constants.Layout.defaultPadding),
+                                                  constant: -Constants.Layout.defaultPadding / 2),
             
             doneButton.leadingAnchor.constraint(equalTo: view.leadingAnchor,
                                                 constant: Constants.Layout.defaultPadding),
@@ -588,6 +590,7 @@ private enum Constants {
         static let iconsCollectionNumberOfRows: CGFloat = 2
         static let categoriesCellHeight: CGFloat = 44
         static let maxCollapsedCategoriesRows: CGFloat = 2
+        static let defaultButtonSize: CGFloat = 44
     }
     
     enum Animation {

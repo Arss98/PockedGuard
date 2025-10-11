@@ -7,6 +7,7 @@
 */
 
 /* Common */
+"AppName" = "Pocked Guard";
 "Today" = "Сегодня";
 "Cancel" = "Отмена";
 "Continue" = "Продолжить";
@@ -31,6 +32,7 @@
 "Still" = "Еще";
 "Wrap" = "Свернуть";
 "Replace" = "Заменить";
+"Analytics" = "Аналитика";
 
 /* Month*/
 "Month.January" = "Январь";
@@ -90,6 +92,7 @@
 "Add.CategoryNamePlaceholder" = "Введите название категории";
 "Add.ColorCategoryTitle" = "Цвет категории";
 "Add.AmountPlaceholder" = "Введите сумму (не обязательно)";
+"Add.SetupIsPrimary" = "Сделать основным";
 "Add.TemplateAmountInfo" =  "Укажите сумму, если хотите создать шаблон\nс фиксированной суммой транзакции.\nЕсли оставить поле пустым, сумму\nнужно будет вводить при каждой трате.";
 
 /*Transaction categories*/
@@ -140,3 +143,12 @@
 "Alert.AddColorMessage" = "Цвет добавлен в палитру";
 "Alert.DuplicateTemplateIconTitle" = "Иконка уже используется";
 "Alert.DuplicateTemplateIconMessage" = "Обнаружен существующий шаблон с данной иконкой. Вы можете заменить его или выбрать другую иконку для нового шаблона.";
+"Alert.PrimaryAccountTitle" = "Установить основной счет";
+"Alert.PrimaryAccountMessage" = "Вы уверены, что хотите сделать счет \"%@\" основным? Это заменит текущий основной счет.";
+
+/* Onboarding */
+"Onboarding.WelcomeTitle" = "Управляйте своими\nфинансами с легкостью!";
+"Onboarding.WelcomeDescription" = "Удобная статистика\nСоздание счетов\nСобственные категории";
+"Onboarding.AnalyticsDescription" = "Подробные отчеты\nГрафики и диаграммы";
+"Onboarding.TemplatesDescription" = "Создавайте шаблоны\nдля регулярных трат";
+"Onboarding.NotificationDescription" = "Создавайте собственные\nнапоминания для разных ситуаций";

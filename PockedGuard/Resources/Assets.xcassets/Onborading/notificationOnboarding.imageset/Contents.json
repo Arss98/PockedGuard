@@ -1,0 +1,12 @@
+{
+  "images" : [
+    {
+      "filename" : "notificationOnboarding.pdf",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

@@ -10,11 +10,14 @@ import SwiftUI
 struct CircleDiagramView: View {
     private let segments: [SegmentDataModel]
     private let totalValue: CGFloat
+    private let currencySymbol: String
     @State private var selectedSegmentIndex: Int?
+    @State private var animationProgress: CGFloat = 0.0
     
-    init(segments: [SegmentDataModel] = []) {
+    init(segments: [SegmentDataModel] = [], currencySymbol: String = "₽") {
         self.segments = segments
         self.totalValue = segments.reduce(.zero) { $0 + $1.value }
+        self.currencySymbol = currencySymbol
     }
     
     var body: some View {
@@ -23,24 +26,39 @@ struct CircleDiagramView: View {
             summaryInfo
         }
         .foregroundStyle(.white)
+        .onAppear {
+            withAnimation(.easeInOut(duration: Constants.Animation.mainDuration)) {
+                animationProgress = 1.0
+            }
+        }
+        .onChange(of: segments) { oldSegments, newSegments in
+            selectedSegmentIndex = nil
+            animationProgress = 0.0
+            withAnimation(.easeInOut(duration: Constants.Animation.mainDuration)) {
+                animationProgress = 1.0
+            }
+        }
     }
 }
-//"chevron.left"
-//"chevron.right"
+
 // MARK: - Computed property
 private extension CircleDiagramView {
     var diagram: some View {
         GeometryReader { geometry in
             ZStack {
+                Circle()
+                    .stroke(Color.appMainBlue.opacity(Constants.Layout.strokeOpacity), lineWidth: Constants.Layout.lineWidth)
+                    .padding(Constants.Layout.lineWidth)
+                
                 if totalValue == .zero || segments.isEmpty {
                     emptyDiagram(in: geometry)
                 } else {
-                    segmentsLayer(in: geometry)
+                    animatedSegmentsLayer(in: geometry)
                 }
             }
             .shadow(
-                color: Color(.black).opacity(Constants.shadowOpacity),
-                radius: Constants.shadowRadius
+                color: Color(.black).opacity(Constants.Layout.shadowOpacity),
+                radius: Constants.Layout.shadowRadius
             )
         }
         .aspectRatio(1, contentMode: .fit)
@@ -51,103 +69,116 @@ private extension CircleDiagramView {
     var summaryInfo: some View {
         VStack {
             Text(selectedSegmentName)
-                .font(.system(size: Constants.titleFontSize, weight: .medium))
+                .font(.system(size: Constants.Layout.titleFontSize, weight: .medium))
             Text(selectedValueText)
-                .font(.system(size: Constants.totalAmountFontSize, weight: .regular))
+                .font(.system(size: Constants.Layout.totalAmountFontSize, weight: .regular))
         }
     }
     
     var selectedSegmentName: String {
-        guard let index = selectedSegmentIndex, !segments.isEmpty, totalValue > 0 else { return .Localized.Common.total.localized }
+        guard let index = selectedSegmentIndex,
+              !segments.isEmpty,
+              totalValue > 0,
+              segments.indices.contains(index) else {
+            return .Localized.Common.total.localized
+        }
         return segments[index].categoryName
     }
     
     var selectedValueText: String {
-        if let index = selectedSegmentIndex, !segments.isEmpty, totalValue > 0 {
-            return "\(segments[index].value.formatted()) ₽"
-        } else {
-            return "\(totalValue.formatted()) ₽"
+        guard let index = selectedSegmentIndex,
+              !segments.isEmpty,
+              totalValue > 0,
+              segments.indices.contains(index) else {
+            return "\(totalValue.formatted()) \(currencySymbol)"
         }
+        return "\(segments[index].value.formatted()) \(currencySymbol)"
     }
 }
 
 // MARK: - Private methods
 private extension CircleDiagramView {
     func emptyDiagram(in geometry: GeometryProxy) -> some View {
-        let radius = calculateRadius(for: geometry)
-        return Circle()
-            .stroke(Color.appMainBlue, lineWidth: Constants.lineWidth)
-            .frame(width: radius * 2, height: radius * 2)
-            .position(centerPoint(for: geometry))
+        Circle()
+            .trim(from: 0, to: animationProgress)
+            .stroke(Color.appMainBlue, lineWidth: Constants.Layout.lineWidth)
+            .rotationEffect(.degrees(-90))
+            .padding(Constants.Layout.lineWidth)
     }
     
-    func segmentsLayer(in geometry: GeometryProxy) -> some View {
-        ForEach(segments.indices, id: \.self) { index in
-            segmentPath(for: index, in: geometry)
-                .onTapGesture { selectSegment(index) }
-                .animation(.easeInOut(duration: Constants.animationDuration), value: selectedSegmentIndex)
+    func animatedSegmentsLayer(in geometry: GeometryProxy) -> some View {
+        ZStack {
+            ForEach(Array(segments.enumerated().reversed()), id: \.offset) { index, segment in
+                AnimatedSegmentView(
+                    segment: segment,
+                    segments: segments,
+                    index: index,
+                    animationProgress: animationProgress,
+                    isSelected: selectedSegmentIndex == index
+                )
+                .onTapGesture {
+                    withAnimation(.easeInOut(duration: Constants.Animation.selectionDuration)) {
+                        selectedSegmentIndex = (selectedSegmentIndex == index) ? nil : index
+                    }
+                }
+            }
         }
     }
+}
+
+// MARK: - Animated Segment View
+struct AnimatedSegmentView: View {
+    let segment: SegmentDataModel
+    let segments: [SegmentDataModel]
+    let index: Int
+    let animationProgress: CGFloat
+    let isSelected: Bool
     
-    func segmentPath(for index: Int, in geometry: GeometryProxy) -> some View {
-        let isSelected = selectedSegmentIndex == index
-        let lineWidth = isSelected ? Constants.lineWidth * 1.2 : Constants.lineWidth
-        
-        return Path { path in
-            let (startAngle, endAngle) = calculateAngles(for: index)
-            path.addArc(
-                center: centerPoint(for: geometry),
-                radius: calculateRadius(for: geometry),
-                startAngle: startAngle,
-                endAngle: endAngle,
-                clockwise: false
+    private var totalValue: CGFloat {
+        segments.reduce(0) { $0 + $1.value }
+    }
+    
+    private var lineWidth: CGFloat {
+        isSelected ? Constants.Layout.lineWidth * 1.2 : Constants.Layout.lineWidth
+    }
+    
+    private var animatedStartPercentage: CGFloat {
+        (segments[0..<index].reduce(0) { $0 + $1.value } / totalValue) * animationProgress
+    }
+    
+    private var animatedSegmentLength: CGFloat {
+        (segment.value / totalValue) * animationProgress
+    }
+    
+    var body: some View {
+        Circle()
+            .trim(from: animatedStartPercentage, to: animatedStartPercentage + animatedSegmentLength)
+            .stroke(
+                Color(hex: segment.color),
+                style: StrokeStyle(
+                    lineWidth: lineWidth,
+                    lineCap: .butt
+                )
             )
-        }
-        .stroke(
-            Color(hex: segments[index].color),
-            style: StrokeStyle(
-                lineWidth: lineWidth,
-                lineCap: .butt
-            )
-        )
-    }
-    
-    func calculateAngles(for index: Int) -> (Angle, Angle) {
-        let start = segments[0..<index].reduce(0) { $0 + $1.value }
-        let startAngle = Angle(radians: 2 * .pi * start / totalValue - .pi/2)
-        let endAngle = Angle(radians: startAngle.radians + 2 * .pi * segments[index].value / totalValue)
-        return (startAngle, endAngle)
-    }
-    
-    func centerPoint(for geometry: GeometryProxy) -> CGPoint {
-        CGPoint(x: geometry.size.width/2, y: geometry.size.height/2)
-    }
-    
-    func calculateRadius(for geometry: GeometryProxy) -> CGFloat {
-        min(geometry.size.width, geometry.size.height)/2 - Constants.padding
-    }
-    
-    func percentage(for index: Int) -> Int {
-        Int((segments[index].value / totalValue) * 100)
-    }
-    
-    func selectSegment(_ index: Int) {
-        selectedSegmentIndex = (selectedSegmentIndex == index) ? nil : index
+            .rotationEffect(.degrees(-90))
+            .padding(Constants.Layout.lineWidth)
+            .animation(.easeInOut(duration: Constants.Animation.selectionDuration), value: isSelected)
     }
 }
 
 // MARK: - Constants
 private enum Constants {
-    static let lineWidth: CGFloat = 30
-    static let shadowRadius: CGFloat = 8
-    static let shadowOpacity: Double = 0.4
-    static let padding: CGFloat = 28
-    static let animationDuration: Double = 0.3
-    static let buttonSize: CGFloat = 32
-    static let titleFontSize: CGFloat = 20
-    static let totalAmountFontSize: CGFloat = 24
-}
-
-#Preview {
-    CircleDiagramView()
+    enum Layout {
+        static let lineWidth: CGFloat = 30
+        static let shadowRadius: CGFloat = 8
+        static let strokeOpacity: Double = 0.3
+        static let shadowOpacity: Double = 0.4
+        static let titleFontSize: CGFloat = 20
+        static let totalAmountFontSize: CGFloat = 24
+    }
+    
+    enum Animation {
+        static let selectionDuration: Double = 0.2
+        static let mainDuration: Double = 1.2
+    }
 }

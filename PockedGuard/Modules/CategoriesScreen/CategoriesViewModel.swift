@@ -35,6 +35,7 @@ private extension CategoriesViewModel {
     func setupBindings() {
         setupDataBinding()
         setupCategoryBinding()
+        setupPrimaryAccountBinding()
         setupDeleteBinding()
     }
     
@@ -44,7 +45,7 @@ private extension CategoriesViewModel {
                 viewModel.fetchData(by: type)
             }
             .disposed(by: disposeBag)
-        
+
         dataProvider.accounts.accounts
             .observe(on: MainScheduler.asyncInstance)
             .map { accounts -> [AccountItemType] in
@@ -84,6 +85,18 @@ private extension CategoriesViewModel {
             .subscribe(onNext: { [weak self] data in
                 self?.executeCategoryAction(data.category, action: data.action)
             })
+            .disposed(by: disposeBag)
+    }
+    
+    func setupPrimaryAccountBinding() {
+        input.isPrimaryAccountTapped
+            .bind(to: output.showPrimaryAccountAlert)
+            .disposed(by: disposeBag)
+        
+        input.confirmSetPrimaryAccount
+            .subscribe(with: self) { viewModel, account in
+                viewModel.setPrimaryAccount(account)
+            }
             .disposed(by: disposeBag)
     }
     
@@ -127,6 +140,19 @@ private extension CategoriesViewModel {
         case .delete:
             deleteCategory(by: category.id)
         }
+    }
+    
+    func setPrimaryAccount(_ account: AccountDomainModel) {
+        output.isLoading.accept(true)
+        
+        dataProvider.accounts.setPrimaryAccount(account.id)
+        .subscribe { [weak self] in
+            self?.output.isLoading.accept(false)
+        } onError: { [weak self] error in
+            self?.output.isLoading.accept(false)
+            self?.output.error.onNext(error)
+        }
+        .disposed(by: disposeBag)
     }
     
     func deleteAccount(by id: UUID) {
@@ -178,11 +204,13 @@ extension CategoriesViewModel {
         let addAccountTapped: PublishSubject<Void> = .init()
         let editAccountTapped: PublishSubject<AccountDomainModel> = .init()
         let deleteAccountTapped: PublishSubject<UUID> = .init()
+        let isPrimaryAccountTapped: PublishSubject<AccountDomainModel> = .init()
         let addTemplateTapped: PublishSubject<Void> = .init()
         let editTemplateTapped: PublishSubject<TemplateDomainModel> = .init()
         let deleteTemplateTapped: PublishSubject<UUID> = .init()
         let categoryAction: PublishSubject<(category: CategoryDomainModel, action: CategoryAction)> = .init()
         let confirmCategoryAction: PublishSubject<(category: CategoryDomainModel, action: CategoryAction)> = .init()
+        let confirmSetPrimaryAccount: PublishSubject<AccountDomainModel> = .init()
     }
     
     struct Output {
@@ -192,6 +220,7 @@ extension CategoriesViewModel {
         let templates: BehaviorRelay<[TemplatesItemType]> = .init(value: [])
         let categories: BehaviorRelay<[CategoryItemType]> = .init(value: [])
         let showSystemCategoryAlert: PublishSubject<(category: CategoryDomainModel, action: CategoryAction)> = .init()
+        let showPrimaryAccountAlert: PublishSubject<AccountDomainModel> = .init()
     }
     
     enum CategoryAction {

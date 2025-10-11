@@ -192,6 +192,7 @@ private extension CoreDataService {
         return performBackgroundTask { context in
             let account: Account = Account(context: context)
             account.id = UUID()
+            account.isPrimary = true
             account.name = .Localized.Common.accountTitle.localized
             account.balance = 0
             account.currency = "RUB"

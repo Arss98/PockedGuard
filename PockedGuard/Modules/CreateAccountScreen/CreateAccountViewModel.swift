@@ -29,6 +29,7 @@ final class CreateAccountViewModel: CreateAccountViewModelProtocol {
         case edit(AccountDomainModel)
     }
     
+    // MARK: - Init
     init(mode: Mode = .add, dataProvider: DataProviderProtocol) {
         self.mode = mode
         self.dataProvider = dataProvider
@@ -93,7 +94,8 @@ private extension CreateAccountViewModel {
             id: UUID(),
             name: input.title.value,
             balance: 0,
-            currency: input.currencyType.value
+            currency: input.currencyType.value,
+            isPrimary: false
         )
          
         return dataProvider.accounts.addAccount(account)

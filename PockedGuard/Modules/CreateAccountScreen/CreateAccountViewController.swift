@@ -211,8 +211,10 @@ private extension CreateAccountViewController {
             titleLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             
             closeButton.centerYAnchor.constraint(equalTo: titleLabel.centerYAnchor),
+            closeButton.widthAnchor.constraint(equalToConstant: Constants.Layout.defaultButtonSize),
+            closeButton.heightAnchor.constraint(equalToConstant: Constants.Layout.defaultButtonSize),
             closeButton.trailingAnchor.constraint(equalTo: view.trailingAnchor,
-                                                  constant: -Constants.Layout.defaultPadding),
+                                                  constant: -Constants.Layout.defaultPadding / 2),
             
             accountNameTextField.topAnchor.constraint(equalTo: titleLabel.bottomAnchor,
                                                       constant: Constants.Layout.defaultPadding * 2),
@@ -250,6 +252,7 @@ private enum Constants {
         static let defaultPadding: CGFloat = 16
         static let buttonCornerRadius: CGFloat = 10
         static let buttonHeight: CGFloat = 52
+        static let defaultButtonSize: CGFloat = 44
     }
     
     enum Animation {

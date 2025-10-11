@@ -12,10 +12,15 @@ protocol AccountRepositoryProtocol {
     var accounts: BehaviorRelay<[AccountDomainModel]> { get }
     var dataInitialized: PublishRelay<Void> { get }
     func addAccount(_ account: AccountDomainModel) -> Completable
-    func updateAccount(id: UUID, newName: String?, newBalance: Double?, newCurrencyType: CurrencyType?) -> Single<AccountDomainModel?>
     func deleteAccount(with id: UUID) -> Completable
     func getAccount(by id: UUID) -> Single<AccountDomainModel?>
     func getAccounts() -> [AccountDomainModel]
+    func setPrimaryAccount(_ accountId: UUID) -> Completable
+    func updateAccount(
+        id: UUID,
+        newName: String?,
+        newBalance: Double?,
+        newCurrencyType: CurrencyType?) -> Single<AccountDomainModel?>
 }
 
 final class AccountRepository: AccountRepositoryProtocol {
@@ -26,8 +31,11 @@ final class AccountRepository: AccountRepositoryProtocol {
     // MARK: - Private properties
     private let coreDataService: CoreDataServiceProtocol
     private let disposeBag: DisposeBag = .init()
-    private let sortDescriptors: [NSSortDescriptor] = [NSSortDescriptor(key: "date", ascending: false)]
     private let backgroundScheduler: ConcurrentDispatchQueueScheduler = .init(qos: .userInitiated)
+    private let sortDescriptors: [NSSortDescriptor] = [
+        NSSortDescriptor(key: "isPrimary", ascending: false),
+        NSSortDescriptor(key: "date", ascending: false)
+    ]
     
     init(coreDataService: CoreDataServiceProtocol) {
         self.coreDataService = coreDataService
@@ -48,6 +56,7 @@ extension AccountRepository {
             return self.coreDataService.create { context in
                 let accountEntity: Account = Account(context: context)
                 accountEntity.id = account.id
+                accountEntity.isPrimary = false
                 accountEntity.name = account.name
                 accountEntity.balance = account.balance
                 accountEntity.currency = account.currency.rawValue
@@ -64,7 +73,10 @@ extension AccountRepository {
         }
     }
     
-    func updateAccount(id: UUID, newName: String?, newBalance: Double?, newCurrencyType: CurrencyType?) -> Single<AccountDomainModel?> {
+    func updateAccount(id: UUID,
+                       newName: String?,
+                       newBalance: Double?,
+                       newCurrencyType: CurrencyType?) -> Single<AccountDomainModel?> {
         Single.create { [weak self] single in
             guard let self else {
                 single(.failure(RepositoryError.deinitialized))
@@ -133,6 +145,39 @@ extension AccountRepository {
     
     func getAccounts() -> [AccountDomainModel] {
         accounts.value
+    }
+    
+    func setPrimaryAccount(_ accountId: UUID) -> Completable {
+        Completable.create { [weak self] completable in
+            guard let self else {
+                completable(.error(RepositoryError.deinitialized))
+                return Disposables.create()
+            }
+            
+            let currentPrimaryAccount = self.accounts.value.first(where: { $0.isPrimary })
+            
+            return Completable.zip(
+                currentPrimaryAccount.map { account in
+                    self.coreDataService.update(Account.self, uuid: account.id) { accountEntity in
+                        accountEntity.isPrimary = false
+                    }
+                    .asCompletable()
+                } ?? Completable.empty(),
+                
+                self.coreDataService.update(Account.self, uuid: accountId) { accountEntity in
+                    accountEntity.isPrimary = true
+                }
+                    .asCompletable()
+            )
+            .subscribe(on: self.backgroundScheduler)
+            .observe(on: MainScheduler.instance)
+            .subscribe(onCompleted: {
+                self.fetchAccounts()
+                completable(.completed)
+            }, onError: { error in
+                completable(.error(error))
+            })
+        }
     }
 }
 

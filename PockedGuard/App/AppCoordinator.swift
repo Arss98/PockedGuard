@@ -39,12 +39,33 @@ final class AppCoordinator: Coordinator {
     }
     
     func start() {
-        startMainFlow()
+        let hasCompletedOnboarding: Bool = UserDefaults.standard.bool(forKey: "hasCompletedOnboarding")
+        hasCompletedOnboarding ? startMainFlow() : startOnboardingFlow()
     }
 }
 
 // MARK: - Private methods
 private extension AppCoordinator {
+    func startOnboardingFlow() {
+        let onboardingCoordinator = OnboardingCoordinator { [weak self] in
+            self?.onboardingCompleted()
+        }
+        
+        addChildCoordinator(onboardingCoordinator)
+        onboardingCoordinator.start()
+        
+        window.rootViewController = onboardingCoordinator.navigationController
+        window.makeKeyAndVisible()
+    }
+    
+    func onboardingCompleted() {
+        if let onboardingCoordinator = childCoordinators.first(where: { $0 is OnboardingCoordinator }) {
+            removeChildCoordinator(onboardingCoordinator)
+        }
+        
+        startMainFlow()
+    }
+    
     func startMainFlow() {
         let tabBarCoordinator: TabBarCoordinator = .init(dataProvider: dataProvider)
         addChildCoordinator(tabBarCoordinator)

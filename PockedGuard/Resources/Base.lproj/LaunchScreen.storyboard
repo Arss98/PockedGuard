@@ -3,31 +3,66 @@
     <device id="retina6_12" orientation="portrait" appearance="light"/>
     <dependencies>
         <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="23506"/>
+        <capability name="Named colors" minToolsVersion="9.0"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
-        <capability name="System colors in document resources" minToolsVersion="11.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <scenes>
         <!--View Controller-->
         <scene sceneID="EHf-IW-A2E">
             <objects>
-                <placeholder placeholderIdentifier="IBFirstResponder" id="iYj-Kq-Ea1" userLabel="First Responder" sceneMemberID="firstResponder"/>
                 <viewController id="01J-lp-oVM" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="Ze5-6b-2t3">
                         <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="backgroundOnboardingWelcome" translatesAutoresizingMaskIntoConstraints="NO" id="G39-lu-6Ih">
+                                <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
+                            </imageView>
+                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="pockedGuard" translatesAutoresizingMaskIntoConstraints="NO" id="5v1-Dr-vtT">
+                                <rect key="frame" x="0.0" y="129" width="393" height="43"/>
+                            </imageView>
+                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="onboardingWelcome" translatesAutoresizingMaskIntoConstraints="NO" id="fm3-tE-2Ob">
+                                <rect key="frame" x="32" y="224" width="329" height="290"/>
+                            </imageView>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Управляйте своими финансами с легкостью!" textAlignment="center" lineBreakMode="tailTruncation" numberOfLines="2" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="FrH-a7-2Eb">
+                                <rect key="frame" x="38" y="590" width="317" height="52.666666666666629"/>
+                                <fontDescription key="fontDescription" type="system" weight="medium" pointSize="22"/>
+                                <color key="textColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                        </subviews>
                         <viewLayoutGuide key="safeArea" id="6Tk-OE-BBY"/>
-                        <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                        <color key="backgroundColor" name="appBackground"/>
+                        <constraints>
+                            <constraint firstItem="G39-lu-6Ih" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" id="By9-eP-yjr"/>
+                            <constraint firstItem="fm3-tE-2Ob" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" constant="32" id="Fh0-Zy-4Sg"/>
+                            <constraint firstItem="G39-lu-6Ih" firstAttribute="trailing" secondItem="6Tk-OE-BBY" secondAttribute="trailing" id="Gvj-FV-wTd"/>
+                            <constraint firstAttribute="bottom" secondItem="G39-lu-6Ih" secondAttribute="bottom" id="LZo-nC-Zvu"/>
+                            <constraint firstItem="6Tk-OE-BBY" firstAttribute="trailing" secondItem="5v1-Dr-vtT" secondAttribute="trailing" id="NEZ-9n-1O6"/>
+                            <constraint firstItem="5v1-Dr-vtT" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" id="P6i-UI-3jr"/>
+                            <constraint firstItem="FrH-a7-2Eb" firstAttribute="top" secondItem="fm3-tE-2Ob" secondAttribute="bottom" constant="76" id="RqB-N8-eri"/>
+                            <constraint firstItem="fm3-tE-2Ob" firstAttribute="top" secondItem="5v1-Dr-vtT" secondAttribute="bottom" constant="52" id="RtY-wT-9A2"/>
+                            <constraint firstItem="6Tk-OE-BBY" firstAttribute="trailing" secondItem="FrH-a7-2Eb" secondAttribute="trailing" constant="38" id="RuV-ib-Py0"/>
+                            <constraint firstItem="FrH-a7-2Eb" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" constant="38" id="RwR-wU-Sbk"/>
+                            <constraint firstItem="6Tk-OE-BBY" firstAttribute="trailing" secondItem="fm3-tE-2Ob" secondAttribute="trailing" constant="32" id="UZI-yx-qlf"/>
+                            <constraint firstItem="5v1-Dr-vtT" firstAttribute="top" secondItem="6Tk-OE-BBY" secondAttribute="top" constant="70" id="Yhy-0p-nBN"/>
+                            <constraint firstItem="G39-lu-6Ih" firstAttribute="top" secondItem="Ze5-6b-2t3" secondAttribute="top" id="zmE-mz-gxA"/>
+                        </constraints>
                     </view>
                     <freeformSimulatedSizeMetrics key="simulatedDestinationMetrics"/>
                 </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="iYj-Kq-Ea1" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
             <point key="canvasLocation" x="52.671755725190835" y="374.64788732394368"/>
         </scene>
     </scenes>
     <resources>
-        <systemColor name="systemBackgroundColor">
-            <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-        </systemColor>
+        <image name="backgroundOnboardingWelcome" width="375" height="812"/>
+        <image name="onboardingWelcome" width="312" height="290"/>
+        <image name="pockedGuard" width="264" height="43"/>
+        <namedColor name="appBackground">
+            <color red="0.13725490196078433" green="0.13725490196078433" blue="0.13725490196078433" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </namedColor>
     </resources>
 </document>

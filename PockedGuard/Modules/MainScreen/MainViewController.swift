@@ -12,7 +12,12 @@ import SwiftUI
 final class MainViewController: BaseViewController {
     // MARK: - UI Elements
     private lazy var periodSegmentedControl: CustomSegmentedControl = .init(items: Constants.SegmentedControl.periodItems)
-    private lazy var financeSegmentedControl: CustomSegmentedControl = .init(items: Constants.SegmentedControl.financeItems)
+    
+    private lazy var financeSegmentedControl: CustomSegmentedControl = {
+        let segmentedControl: CustomSegmentedControl = .init(items: Constants.SegmentedControl.financeItems)
+        segmentedControl.widthAnchor.constraint(equalToConstant: Constants.Layout.segmentControlWidth).isActive = true
+        return segmentedControl
+    }()
     
     private lazy var accountsCollectionView: UICollectionView = {
         let layout: UICollectionViewFlowLayout = .init()
@@ -36,7 +41,7 @@ final class MainViewController: BaseViewController {
     }()
     
     private lazy var circleDiagramView: UIHostingController<CircleDiagramView> = {
-        let circleDiagramView: CircleDiagramView = .init(segments: self.viewModel.output.segmentsDiagram.value)
+        let circleDiagramView: CircleDiagramView = .init()
         let hostingController: UIHostingController<CircleDiagramView> = .init(rootView: circleDiagramView)
         hostingController.view.translatesAutoresizingMaskIntoConstraints = false
         hostingController.view.backgroundColor = .clear
@@ -44,7 +49,7 @@ final class MainViewController: BaseViewController {
     }()
     
     private lazy var previousPeriodButton: UIButton = {
-        let button: UIButton = .init(type: .custom)
+        let button: UIButton = .init(type: .system)
         let image: UIImage? = .init(systemName: "chevron.left")
         let configuration: UIImage.SymbolConfiguration = .init(pointSize: Constants.Layout.periodButtonSize)
         button.setImage(image?.withConfiguration(configuration), for: .normal)
@@ -54,7 +59,7 @@ final class MainViewController: BaseViewController {
     }()
     
     private lazy var nextPeriodButton: UIButton = {
-        let button: UIButton = .init(type: .custom)
+        let button: UIButton = .init(type: .system)
         let image: UIImage? = .init(systemName: "chevron.right")
         let configuration: UIImage.SymbolConfiguration = .init(pointSize: Constants.Layout.periodButtonSize)
         button.setImage(image?.withConfiguration(configuration), for: .normal)
@@ -223,11 +228,26 @@ private extension MainViewController {
             }
             .disposed(by: disposeBag)
         
-        viewModel.output.segmentsDiagram
-            .asDriver(onErrorJustReturn: [])
-            .drive(onNext: { [weak self] segments in
-                self?.circleDiagramView.rootView = CircleDiagramView(segments: segments)
-            })
+        Observable.combineLatest(
+            viewModel.output.segmentsDiagram,
+            viewModel.output.currencySymbol
+        )
+        .asDriver(onErrorJustReturn: ([], "₽"))
+        .drive(onNext: { [weak self] segments, currencySymbol in
+            self?.circleDiagramView.rootView = CircleDiagramView(segments: segments, currencySymbol: currencySymbol)
+        })
+        .disposed(by: disposeBag)
+        
+        viewModel.output.accounts
+            .distinctUntilChanged()
+            .observe(on: MainScheduler.asyncInstance)
+            .subscribe(with: self) { controller, accounts in
+                guard let selectedAccount = controller.viewModel.input.selectedAccount.value,
+                      let index = accounts.firstIndex(where: { $0.id == selectedAccount.id }) else { return }
+                
+                let indexPath = IndexPath(row: index, section: .zero)
+                controller.accountsCollectionView.selectItem(at: indexPath, animated: false, scrollPosition: .centeredHorizontally)
+            }
             .disposed(by: disposeBag)
         
         viewModel.output.accounts
@@ -314,7 +334,8 @@ extension MainViewController: UITableViewDelegate {
             categoryName: currentSection.categoryName,
             percentage: currentSection.percentage,
             amount: currentSection.transactions.reduce(.zero) { $0 + $1.amount },
-            color: currentSection.transactions.first?.category?.color
+            color: currentSection.transactions.first?.category?.color,
+            currencySymbol: currentSection.currencySymbol
         )
         
         return header
@@ -501,6 +522,7 @@ private enum Constants {
         static let transactionsBackgroundShadowOffset = CGSize(width: 0, height: -4)
         static let multiplier: CGFloat = 0.95
         static let periodButtonSize: CGFloat = 44
+        static let segmentControlWidth: CGFloat = 216
     }
     
     enum Animation {
