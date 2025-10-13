@@ -25,7 +25,7 @@ final class AnalyticsCoordinator: Coordinator {
 // MARK: - Private methods
 private extension AnalyticsCoordinator {
     func showAnalyticsScreen() {
-        let viewModel: AnalyticsViewModelProtocol = AnalyticsViewModel()
+        let viewModel: AnalyticsViewModelProtocol = AnalyticsViewModel(dataProvider: dataProvider)
         let viewController: AnalyticsViewController = .init(viewModel: viewModel)
         
         navigationController?.pushViewController(viewController, animated: true)

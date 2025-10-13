@@ -17,6 +17,7 @@
 "OK" = "Ок";
 "Income" = "Доходы";
 "Expenses" = "Расходы";
+"Loss" = "Убыток"; 
 "DefaultAccountTitle" = "Основной счет";
 "Total" = "Итого";
 "Transaction.EmptyLabel" = "Операции за выбранный период не найдены";
@@ -52,6 +53,7 @@
 "Period.Day" = "День";
 "Period.Week" = "Неделя";
 "Period.Month" = "Месяц";
+"Period.Year" = "Год";
 "Period" = "Период";
 
 /* Notification Screen */
@@ -71,14 +73,12 @@
 "NotificationScreen.Once" = "Один раз";
 "NotificationScreen.EmptyLabel" = "Ваш список напоминаний пуст. Добавьте новые напоминания, чтобы ничего не забыть!";
 
-/*Add Screen*/
-"AddScreen.AmountZeroPlaceholder" = "0";
-"AddScreen.DescriptionPlaceholder" = "Комментарий...";
-"AddScreen.TemplatesLabelTitle" = "Шаблоны операций";
-"AddScreen.TemplatesInfoLabel" = "Шаблоны — это готовые\nповторяющиеся операции";
-"AddScreen.TemplatesIsEmptyLabel" = "Список шаблонов пуст. Добавьте новые шаблоны, чтобы упросить добавление регулярных операций.";
-
-/* Add Categories, Accounts */
+/* Add Transaction, Categories, Accounts */
+"Add.AmountZeroPlaceholder" = "0";
+"Add.DescriptionPlaceholder" = "Комментарий...";
+"Add.TemplatesLabelTitle" = "Шаблоны операций";
+"Add.TemplatesInfoLabel" = "Шаблоны — это готовые\nповторяющиеся операции";
+"Add.TemplatesIsEmptyLabel" = "Список шаблонов пуст. Добавьте новые шаблоны, чтобы упросить добавление регулярных операций.";
 "Add.Category" = "Добавить категорию";
 "Add.EditCategory" = "Редактировать категорию";
 "Add.Account" = "Добавить счет";

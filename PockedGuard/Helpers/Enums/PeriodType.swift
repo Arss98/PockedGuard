@@ -11,6 +11,7 @@ enum PeriodType: Equatable {
     case day(start: Date = Date())
     case week(start: Date = Date())
     case month(start: Date = Date())
+    case year(start: Date = Date())
     case custom(start: Date, end: Date)
     
     var description: String {
@@ -36,10 +37,12 @@ enum PeriodType: Equatable {
         case .custom(let start, let end):
             formatter.dateFormat = "dd.MM.yyyy"
             return "\(formatter.string(from: start)) - \(formatter.string(from: end))"
+        case .year: return ""
         }
     }
 }
 
+// MARK: - Next, Previous period
 extension PeriodType {
     var previous: PeriodType {
         switch self {
@@ -49,7 +52,7 @@ extension PeriodType {
             return .week(start: Calendar.current.date(byAdding: .weekOfYear, value: -1, to: start) ?? Date())
         case .month(let start):
             return .month(start: Calendar.current.date(byAdding: .month, value: -1, to: start) ?? Date())
-        case .custom:
+        default:
             return self
         }
     }
@@ -62,13 +65,13 @@ extension PeriodType {
             return .week(start: Calendar.current.date(byAdding: .weekOfYear, value: 1, to: start) ?? Date())
         case .month(let start):
             return .month(start: Calendar.current.date(byAdding: .month, value: 1, to: start) ?? Date())
-        case .custom:
+        default:
             return self
         }
     }
     
     var isFuture: Bool {
-        let now = Date()
+        let now: Date = .init()
         switch self {
         case .day(let start):
             let nextDay: Date = Calendar.current.date(byAdding: .day, value: 1, to: start) ?? start
@@ -79,8 +82,79 @@ extension PeriodType {
         case .month(let start):
             let end: Date = Calendar.current.date(byAdding: .month, value: 1, to: start) ?? start
             return end > now
-        case .custom:
+        default:
             return true
+        }
+    }
+}
+
+// MARK: - Analytics Diagram
+extension PeriodType {
+    func getDisplayDates() -> [Date] {
+        let calendar: Calendar = Calendar.current
+        var dates: [Date] = []
+        
+        switch self {
+        case .day(let start):
+            for dayOffset in (-6)...0 {
+                if let date = calendar.date(byAdding: .day, value: dayOffset, to: start) {
+                    dates.append(date)
+                }
+            }
+        case .week(let start):
+            for weekOffset in (-6)...0 {
+                if let date = calendar.date(byAdding: .weekOfYear, value: weekOffset, to: start) {
+                    dates.append(date)
+                }
+            }
+        case .month(let start):
+            for monthOffset in (-6)...0 {
+                if let date = calendar.date(byAdding: .month, value: monthOffset, to: start) {
+                    dates.append(date)
+                }
+            }
+        case .year(let start):
+            for yearOffset in (-6)...0 {
+                if let date = calendar.date(byAdding: .year, value: yearOffset, to: start) {
+                    dates.append(date)
+                }
+            }
+        case .custom:
+            break
+        }
+        
+        return dates
+    }
+
+    func formatDateForXAxis(_ date: Date) -> String {
+        let formatter: DateFormatter = .init()
+        formatter.locale = Locale(identifier: "ru_RU")
+        
+        switch self {
+        case .day:
+            formatter.dateFormat = "dd.MM"
+            return formatter.string(from: date)
+        case .week:
+            formatter.dateFormat = "dd.MM"
+            return formatter.string(from: date)
+        case .month:
+            formatter.dateFormat = "MMM"
+            formatter.monthSymbols = Constants.monthSymbols
+            return formatter.string(from: date)
+        case .year:
+            formatter.dateFormat = "yyyy"
+            return formatter.string(from: date)
+        case .custom: return ""
+        }
+    }
+    
+    var xAxisStride: Calendar.Component {
+        switch self {
+        case .day: return .day
+        case .week: return .weekOfYear
+        case .month: return .month
+        case .year: return .year
+        case .custom: return .day
         }
     }
 }

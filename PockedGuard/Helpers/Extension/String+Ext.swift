@@ -31,6 +31,7 @@ extension String {
             case ok
             case income
             case expenses
+            case loss
             case accountTitle
             case total
             case transactionsEmptyLabel
@@ -65,7 +66,7 @@ extension String {
         }
         
         enum Period {
-            case day, week, month
+            case day, week, month, year
         }
         
         enum Notification {
@@ -189,6 +190,7 @@ extension String.Localized.Common: Localizable {
         case .ok: return "OK"
         case .income: return "Income"
         case .expenses: return "Expenses"
+        case .loss: return "Loss"
         case .accountTitle: return "DefaultAccountTitle"
         case .total: return "Total"
         case .transactionsEmptyLabel: return "Transaction.EmptyLabel"
@@ -236,6 +238,7 @@ extension String.Localized.Period: Localizable {
         case .day: return "Period.Day"
         case .week: return "Period.Week"
         case .month: return "Period.Month"
+        case .year: return "Period.Year"
         }
     }
 }
@@ -267,11 +270,11 @@ extension String.Localized.Notification: Localizable {
 extension String.Localized.Add: Localizable {
     var key: String {
         switch self {
-        case .amountZeroPlaceholder: return "AddScreen.AmountZeroPlaceholder"
-        case .descriptionPlaceholder: return "AddScreen.DescriptionPlaceholder"
-        case .templatesTitle: return "AddScreen.TemplatesLabelTitle"
-        case .templatesInfo: return "AddScreen.TemplatesInfoLabel"
-        case .templatesIsEmptyLabel: return "AddScreen.TemplatesIsEmptyLabel"
+        case .amountZeroPlaceholder: return "Add.AmountZeroPlaceholder"
+        case .descriptionPlaceholder: return "Add.DescriptionPlaceholder"
+        case .templatesTitle: return "Add.TemplatesLabelTitle"
+        case .templatesInfo: return "Add.TemplatesInfoLabel"
+        case .templatesIsEmptyLabel: return "Add.TemplatesIsEmptyLabel"
         case .addCategory: return "Add.Category"
         case .editCategory: return "Add.EditCategory"
         case .addAccount: return "Add.Account"

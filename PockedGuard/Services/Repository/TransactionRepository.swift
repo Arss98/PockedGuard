@@ -13,6 +13,7 @@ protocol TransactionRepositoryProtocol {
     var transactions: BehaviorRelay<[TransactionDomainModel]> { get }
     func setFilters(type: TransactionType?, accountId: UUID?, period: PeriodType?)
     func createTransaction(_ transaction: TransactionDomainModel) -> Completable
+    func getTransactionsAnalytics(period: PeriodType) -> Single<[TransactionDomainModel]>
     func deleteTransaction(with id: UUID) -> Completable
 }
 
@@ -82,6 +83,31 @@ extension TransactionRepository {
             })
         }
     }
+    
+    func getTransactionsAnalytics(period: PeriodType) -> Single<[TransactionDomainModel]> {
+        return Single.create { [weak self] single in
+            guard let self else {
+                single(.failure(RepositoryError.deinitialized))
+                return Disposables.create()
+            }
+            guard let compoundPredicate = self.createCompoundPredicate(period: period) else {
+                single(.success([]))
+                return Disposables.create()
+            }
+        
+            self.coreDataService.fetch(Transaction.self, predicate: compoundPredicate, sortDescriptors: nil)
+                .subscribe(on: backgroundScheduler)
+                .observe(on: MainScheduler.instance)
+                .subscribe { allTransaction in
+                    single(.success(allTransaction))
+                } onFailure: { error in
+                    single(.failure(error))
+                }
+                .disposed(by: self.disposeBag)
+            
+            return Disposables.create()
+        }
+    }
 
     func deleteTransaction(with id: UUID) -> Completable {
         Completable.create { [weak self] completable in
@@ -137,6 +163,29 @@ private extension TransactionRepository {
             .disposed(by: disposeBag)
     }
     
+    func createCompoundPredicate(period: PeriodType) -> NSCompoundPredicate? {
+        let dates: [Date] = period.getDisplayDates()
+        guard !dates.isEmpty else { return nil }
+        
+        let predicates: [NSPredicate] = dates.map { date -> NSPredicate in
+            switch period {
+            case .day:
+                return createDatePredicate(for: .day(start: date))
+            case .week:
+                return createDatePredicate(for: .week(start: date))
+            case .month:
+                return createDatePredicate(for: .month(start: date))
+            case .year:
+                return createDatePredicate(for: .year(start: date))
+            case .custom:
+                return createDatePredicate(for: .day(start: date))
+            }
+        }
+        
+        let compoundPredicate: NSCompoundPredicate = .init(orPredicateWithSubpredicates: predicates)
+        return compoundPredicate
+    }
+    
     func configurePredicate(type: TransactionType? = nil, periodType: PeriodType? = nil, accountId: UUID? = nil) -> NSPredicate? {
         var predicates: [NSPredicate] = []
         
@@ -174,6 +223,13 @@ private extension TransactionRepository {
             let dates: (start: Date, end: Date) = Date.monthDates(for: start)
             return NSPredicate(format: "date >= %@ AND date <= %@",
                                dates.start as NSDate, dates.end as NSDate)
+        
+        case .year(let start):
+            let year = calendar.component(.year, from: start)
+            let startDate = calendar.date(from: DateComponents(year: year, month: 1, day: 1))!
+            let endDate = calendar.date(from: DateComponents(year: year + 1, month: 1, day: 1))!
+            return NSPredicate(format: "date >= %@ AND date < %@",
+                               startDate as NSDate, endDate as NSDate)
             
         case .custom(let start, let end):
             return NSPredicate(format: "date >= %@ AND date <= %@",
