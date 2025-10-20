@@ -4,7 +4,6 @@
 //
 //  Created by Арсен Дадаев on 08.03.2025.
 //
-
 import RxSwift
 import RxCocoa
 
@@ -14,6 +13,7 @@ protocol AnalyticsViewModelProtocol: AnyObject {
 }
 
 final class AnalyticsViewModel: AnalyticsViewModelProtocol {
+    
     // MARK: - Public Properties
     let input: Input
     let output: Output
@@ -50,12 +50,14 @@ private extension AnalyticsViewModel {
         dataProvider.transaction.transactionByAnalytics
             .observe(on: backgroundScheduler)
             .map { [weak self] transactions -> (barData: [FinancialBarChartData], summary: [AnalyticsSummary]) in
-                guard let self else { return ([], []) }
-                let transactionByDateAndType = groupTransactionsByDateAndType(transactions, period: input.selectedPeriod.value)
+                guard let self = self else { return ([], []) }
                 
-                let barData: [FinancialBarChartData] = self.prepareByBarChart(transactionByDateAndType)
-                let summary: [AnalyticsSummary] = self.calculateSummaryData(transactionByDateAndType)
-                self.prepareByLineChart(transactionByDateAndType)
+                let transactionByDateAndType = groupTransactionsByDateAndType(transactions, period: input.selectedPeriod.value)
+                let amountsByDate = calculateAmountsByDate(transactionByDateAndType)
+                
+                let barData: [FinancialBarChartData] = self.prepareByBarChart(amountsByDate: amountsByDate)
+                let summary: [AnalyticsSummary] = self.calculateSummaryData(amountsByDate: amountsByDate)
+                self.prepareByLineChart(amountsByDate: amountsByDate)
                 
                 return (barData, summary)
             }
@@ -68,7 +70,24 @@ private extension AnalyticsViewModel {
             .disposed(by: disposeBag)
     }
     
-    func prepareByBarChart(_ transactions: [Date : [TransactionType : [TransactionDomainModel]]]) -> [FinancialBarChartData] {
+    func calculateAmountsByDate(_ transactions: [Date: [TransactionType: [TransactionDomainModel]]]) -> [Date: DateCategoryAmounts] {
+        var amountsByDate: [Date: DateCategoryAmounts] = [:]
+        
+        for (date, dateTransactions) in transactions {
+            amountsByDate[date] = DateCategoryAmounts(dateTransactions: dateTransactions)
+        }
+        
+        let period = input.selectedPeriod.value
+        let displayDates = period.getDisplayDates()
+        
+        for date in displayDates where amountsByDate[date] == nil {
+            amountsByDate[date] = DateCategoryAmounts(dateTransactions: nil)
+        }
+        
+        return amountsByDate
+    }
+    
+    func prepareByBarChart(amountsByDate: [Date: DateCategoryAmounts]) -> [FinancialBarChartData] {
         var financialData: [FinancialBarChartData] = []
         let period: PeriodType = input.selectedPeriod.value
         let displayDates = period.getDisplayDates()
@@ -76,45 +95,38 @@ private extension AnalyticsViewModel {
         guard let firstDate = displayDates.first, let lastDate = displayDates.last else {
             return financialData
         }
-                
+        
         for periodDate in displayDates {
-            let dateTransactions = transactions[periodDate]
+            guard let amounts = amountsByDate[periodDate] else { continue }
             
-            let income: Double = dateTransactions?[.income]?.reduce(0) { $0 + $1.amount } ?? 0
-            let expense: Double = dateTransactions?[.expense]?.reduce(0) { $0 + $1.amount } ?? 0
-            let loss: Double = max(expense - income, 0)
-            
-            if income > 0 || periodDate == firstDate || periodDate == lastDate {
-                financialData.append(FinancialBarChartData(period: periodDate, amount: income, category: .income))
+            if amounts.income > 0 || periodDate == firstDate || periodDate == lastDate {
+                financialData.append(FinancialBarChartData(period: periodDate, amount: amounts.income, category: .income))
             }
             
-            if expense > 0 || periodDate == firstDate || periodDate == lastDate {
-                financialData.append(FinancialBarChartData(period: periodDate, amount: expense, category: .expense))
+            if amounts.expense > 0 || periodDate == firstDate || periodDate == lastDate {
+                financialData.append(FinancialBarChartData(period: periodDate, amount: amounts.expense, category: .expense))
             }
             
-            if loss > 0 || periodDate == firstDate || periodDate == lastDate {
-                financialData.append(FinancialBarChartData(period: periodDate, amount: loss, category: .loss))
+            if amounts.loss > 0 || periodDate == firstDate || periodDate == lastDate {
+                financialData.append(FinancialBarChartData(period: periodDate, amount: amounts.loss, category: .loss))
             }
         }
         
         return financialData
     }
     
-    func prepareByLineChart(_ transactions: [Date : [TransactionType : [TransactionDomainModel]]]) {
+    func prepareByLineChart(amountsByDate: [Date: DateCategoryAmounts]) {
         let period = input.selectedPeriod.value
         let displayDates = period.getDisplayDates()
         
         var incomeData: [FinancialLineChartData] = []
         var expenseData: [FinancialLineChartData] = []
-                
+        
         for periodDate in displayDates {
-            let dateTransactions = transactions[periodDate]
+            guard let amounts = amountsByDate[periodDate] else { continue }
             
-            let incomeAmount: Double = dateTransactions?[.income]?.reduce(0) { $0 + $1.amount } ?? 0
-            let expenseAmount: Double = dateTransactions?[.expense]?.reduce(0) { $0 + $1.amount } ?? 0
-            
-            incomeData.append(FinancialLineChartData(date: periodDate, amount: incomeAmount))
-            expenseData.append(FinancialLineChartData(date: periodDate, amount: expenseAmount))
+            incomeData.append(FinancialLineChartData(date: periodDate, amount: amounts.income))
+            expenseData.append(FinancialLineChartData(date: periodDate, amount: amounts.expense))
         }
         
         incomeData.sort { $0.date < $1.date }
@@ -126,18 +138,18 @@ private extension AnalyticsViewModel {
         lineChartDataCache = cache
     }
     
-    func calculateSummaryData(_ transactions: [Date : [TransactionType : [TransactionDomainModel]]]) -> [AnalyticsSummary] {
+    func calculateSummaryData(amountsByDate: [Date: DateCategoryAmounts]) -> [AnalyticsSummary] {
         let allDates: [Date] = input.selectedPeriod.value.getDisplayDates()
-        let datesWithTransactions: [Date] = getDatesWithTransactions(from: allDates, transactions: transactions)
+        let datesWithTransactions: [Date] = getDatesWithTransactions(from: allDates, amountsByDate: amountsByDate)
         
-        guard shouldCalculatePercentages(for: datesWithTransactions, transactions: transactions) else {
+        guard shouldCalculatePercentages(for: datesWithTransactions, amountsByDate: amountsByDate) else {
             output.isShowEmptyView.accept(false)
             return createEmptySummaries()
         }
         
         output.isShowEmptyView.accept(true)
         
-        let totalsByDate = calculateTotalsByDate(for: transactions, on: datesWithTransactions)
+        let totalsByDate = calculateTotalsByDate(amountsByDate: amountsByDate, on: datesWithTransactions)
         let currentDate: Date = datesWithTransactions.last!
         let baseDates: [Date] = Array(datesWithTransactions.dropLast())
         
@@ -189,7 +201,7 @@ private extension AnalyticsViewModel {
             return calendar.date(from: calendar.dateComponents([.year], from: date))!
         }
     }
-
+    
     func groupTransactionsByDateAndType(
         _ transactions: [TransactionDomainModel],
         period: PeriodType
@@ -209,29 +221,26 @@ private extension AnalyticsViewModel {
         return transactionsByDateAndType
     }
     
-    func getDatesWithTransactions(from allDates: [Date], transactions: [Date : [TransactionType : [TransactionDomainModel]]]) -> [Date] {
+    func getDatesWithTransactions(from allDates: [Date], amountsByDate: [Date: DateCategoryAmounts]) -> [Date] {
         return allDates.filter { date in
-            guard let dateTransactions = transactions[date] else { return false }
-            
-            let hasIncome: Bool = (dateTransactions[.income]?.count ?? 0) > 0
-            let hasExpense: Bool = (dateTransactions[.expense]?.count ?? 0) > 0
-            
-            return hasIncome || hasExpense
+            guard let amounts = amountsByDate[date] else { return false }
+            return amounts.income > 0 || amounts.expense > 0
         }
     }
     
     func shouldCalculatePercentages(for datesWithTransactions: [Date],
-                                    transactions: [Date: [TransactionType: [TransactionDomainModel]]]) -> Bool {
+                                    amountsByDate: [Date: DateCategoryAmounts]) -> Bool {
         let allDates: [Date] = input.selectedPeriod.value.getDisplayDates()
         
         guard datesWithTransactions.count >= 3 else {
             return false
         }
         
-        let totalTransactions: Int  = transactions.values
-            .flatMap { $0.values }
-            .flatMap { $0 }
-            .count
+        let totalTransactions: Int = amountsByDate.values.reduce(0) { partialResult, amounts in
+            let hasIncome: Bool = amounts.income > 0
+            let hasExpense: Bool = amounts.expense > 0
+            return partialResult + (hasIncome ? 1 : 0) + (hasExpense ? 1 : 0)
+        }
         
         guard totalTransactions >= 5 else {
             return false
@@ -282,21 +291,21 @@ private extension AnalyticsViewModel {
         }
     }
     
-    func calculateTotalsByDate(for transactions: [Date : [TransactionType : [TransactionDomainModel]]],
+    func calculateTotalsByDate(amountsByDate: [Date: DateCategoryAmounts],
                                on dates: [Date]) -> [Date: [FinancialCategory: Double]] {
         var totalsByDate: [Date: [FinancialCategory: Double]] = [:]
         
         for date in dates {
-            guard let dateTransactions = transactions[date] else {
+            guard let amounts = amountsByDate[date] else {
                 totalsByDate[date] = [.income: 0, .expense: 0, .loss: 0]
                 continue
             }
             
-            let income: Double = dateTransactions[.income]?.reduce(0) { $0 + $1.amount } ?? 0
-            let expense: Double = dateTransactions[.expense]?.reduce(0) { $0 + $1.amount } ?? 0
-            let loss: Double = max(expense - income, 0)
-            
-            totalsByDate[date] = [.income: income, .expense: expense, .loss: loss]
+            totalsByDate[date] = [
+                .income: amounts.income,
+                .expense: amounts.expense,
+                .loss: amounts.loss
+            ]
         }
         
         return totalsByDate
@@ -315,5 +324,29 @@ extension AnalyticsViewModel {
         let lineChartTransaction: BehaviorRelay<[FinancialLineChartData]> = .init(value: [])
         let summaryData: BehaviorRelay<[AnalyticsSummary]> = .init(value: [])
         let isShowEmptyView: BehaviorRelay<Bool> = .init(value: false)
+    }
+}
+
+// MARK: - Helper Structures
+private struct DateCategoryAmounts {
+    let income: Double
+    let expense: Double
+    let loss: Double
+    
+    init(dateTransactions: [TransactionType: [TransactionDomainModel]]?) {
+        let incomeAmount = dateTransactions?[.income]?.reduce(0) { $0 + $1.amount } ?? 0
+        let expenseAmount = dateTransactions?[.expense]?.reduce(0) { $0 + $1.amount } ?? 0
+        
+        self.income = incomeAmount
+        self.expense = expenseAmount
+        self.loss = max(expenseAmount - incomeAmount, 0)
+    }
+    
+    func amount(for category: FinancialCategory) -> Double {
+        switch category {
+        case .income: return income
+        case .expense: return expense
+        case .loss: return loss
+        }
     }
 }
