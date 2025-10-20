@@ -8,10 +8,10 @@
 import Foundation
 
 enum PeriodType: Equatable {
-    case day(start: Date = Date())
-    case week(start: Date = Date())
-    case month(start: Date = Date())
-    case year(start: Date = Date())
+    case day(start: Date = Calendar.current.startOfDay(for: Date()))
+    case week(start: Date = Calendar.current.startOfDay(for: Date()))
+    case month(start: Date = Calendar.current.startOfDay(for: Date()))
+    case year(start: Date = Calendar.current.startOfDay(for: Date()))
     case custom(start: Date, end: Date)
     
     var description: String {
@@ -102,20 +102,24 @@ extension PeriodType {
                 }
             }
         case .week(let start):
+            let startOfWeek: Date = calendar.date(from: calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: start))!
+            
             for weekOffset in (-6)...0 {
-                if let date = calendar.date(byAdding: .weekOfYear, value: weekOffset, to: start) {
+                if let date = calendar.date(byAdding: .weekOfYear, value: weekOffset, to: startOfWeek) {
                     dates.append(date)
                 }
             }
         case .month(let start):
+            let startOfMonth: Date = calendar.date(from: calendar.dateComponents([.year, .month], from: start))!
             for monthOffset in (-6)...0 {
-                if let date = calendar.date(byAdding: .month, value: monthOffset, to: start) {
+                if let date = calendar.date(byAdding: .month, value: monthOffset, to: startOfMonth) {
                     dates.append(date)
                 }
             }
         case .year(let start):
+            let startOfYear: Date = calendar.date(from: calendar.dateComponents([.year], from: start))!
             for yearOffset in (-6)...0 {
-                if let date = calendar.date(byAdding: .year, value: yearOffset, to: start) {
+                if let date = calendar.date(byAdding: .year, value: yearOffset, to: startOfYear) {
                     dates.append(date)
                 }
             }
@@ -125,7 +129,7 @@ extension PeriodType {
         
         return dates
     }
-
+    
     func formatDateForXAxis(_ date: Date) -> String {
         let formatter: DateFormatter = .init()
         formatter.locale = Locale(identifier: "ru_RU")

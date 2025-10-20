@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct FinancialBarChartData: Identifiable, Hashable {
-    let id = UUID()
+    let id: UUID = UUID()
     let period: Date
     let amount: Double
     let category: FinancialCategory
@@ -38,8 +38,8 @@ enum FinancialCategory: String, CaseIterable {
 
 extension FinancialBarChartData {
     static var mockData: [FinancialBarChartData] {
-        let calendar = Calendar.current
-        let today = Date()
+        let calendar: Calendar = Calendar.current
+        let today: Date = Date()
         
         return [
             FinancialBarChartData(period: calendar.date(byAdding: .day, value: -6, to: today)!, amount: 15000, category: .income),

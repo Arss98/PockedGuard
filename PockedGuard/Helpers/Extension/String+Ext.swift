@@ -172,6 +172,20 @@ extension String {
             case templatesDescription
             case notificationDescription
         }
+        
+        enum Analytics {
+            case excellent
+            case good
+            case neutral
+            case warning
+            case expensesDecreased
+            case incomeIncreased
+            case lossDecreased
+            case expensesIncreased
+            case incomeDecreased
+            case lossIncreased
+            case emptyViewMessage
+        }
     }
 }
 
@@ -378,6 +392,25 @@ extension String.Localized.Onboarding: Localizable {
         case .analyticsDescription: return "Onboarding.AnalyticsDescription"
         case .templatesDescription: return "Onboarding.TemplatesDescription"
         case .notificationDescription: return "Onboarding.NotificationDescription"
+        }
+    }
+}
+
+// MARK: - Performance Rating
+extension String.Localized.Analytics: Localizable {
+    var key: String {
+        switch self {
+        case .excellent: return "Analytics.RatingExcellent"
+        case .good: return "Analytics.RatingGood"
+        case .neutral: return "Analytics.RatingNeutral"
+        case .warning: return "Analytics.RatingWarning"
+        case .expensesDecreased: return "Analytics.ExpensesDecreased"
+        case .incomeIncreased: return "Analytics.IncomeIncreased"
+        case .lossDecreased: return "Analytics.LossDecreased"
+        case .expensesIncreased: return "Analytics.ExpensesIncreased"
+        case .incomeDecreased: return "Analytics.IncomeDecreased"
+        case .lossIncreased: return "Analytics.LossIncreased"
+        case .emptyViewMessage: return "Analytics.EmptyViewMessage"
         }
     }
 }

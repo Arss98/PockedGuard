@@ -193,13 +193,10 @@ private extension AccountRepository {
     
     func fetchAccounts() {
         coreDataService.fetch(Account.self, predicate: nil, sortDescriptors: sortDescriptors)
+            .asObservable()
             .subscribe(on: backgroundScheduler)
             .observe(on: MainScheduler.instance)
-            .subscribe { [weak self] accounts in
-                self?.accounts.accept(accounts)
-            } onFailure: { error in
-                print("Error fetching accounts: \(error)")
-            }
+            .bind(to: accounts)
             .disposed(by: disposeBag)
     }
 }

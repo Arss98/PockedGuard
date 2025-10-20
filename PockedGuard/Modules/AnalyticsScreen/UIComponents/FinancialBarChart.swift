@@ -9,12 +9,27 @@ import SwiftUI
 import Charts
 
 struct FinancialBarChart: View {
-    let data: [FinancialBarChartData]
-    let periodType: PeriodType
+    // MARK: - Public properties
+    var data: [FinancialBarChartData]
+    var periodType: PeriodType
     
+    // MARK: - Private properties
+    @State private var animationProgress: CGFloat = 0.0
+
+    // MARK: - Init
+    init(data: [FinancialBarChartData] = [], periodType: PeriodType = .day()) {
+        self.data = data
+        self.periodType = periodType
+    }
+    
+    // MARK: - Body
     var body: some View {
         VStack(spacing: Constants.Layout.defaultSpacing / 2) {
-            FinancialBarChartView(data: data, periodType: periodType)
+            FinancialBarChartView(
+                data: data,
+                periodType: periodType,
+                animationProgress: animationProgress
+            )
             xAxisDates
             categoryLegend
         }
@@ -22,6 +37,17 @@ struct FinancialBarChart: View {
         .background(.appCardAndField)
         .clipShape(.rect(cornerRadius: Constants.Layout.cornerRadius))
         .padding(.horizontal)
+        .onChange(of: data) { _, _ in
+            animationProgress = 0.0
+            withAnimation(.easeInOut(duration: Constants.Animation.duration)) {
+                animationProgress = 1.0
+            }
+        }
+        .onAppear {
+            withAnimation(.easeInOut(duration: Constants.Animation.duration)) {
+                animationProgress = 1.0
+            }
+        }
     }
 }
 
@@ -36,7 +62,7 @@ private extension FinancialBarChart {
                         .frame(height: Constants.Layout.lineHeight)
                     
                     Text(periodType.formatDateForXAxis(date))
-                        .font(.system(size: Constants.Text.datefontSize, weight: .regular))
+                        .font(.system(size: Constants.Text.dateFontSize, weight: .regular))
                         .foregroundStyle(.appForegroundSecondary)
                 }
             }
@@ -68,62 +94,41 @@ private extension FinancialBarChart {
 // MARK: - BarChart
 private struct FinancialBarChartView: View {
     // MARK: - Public properties
-    let data: [FinancialBarChartData]
-    let periodType: PeriodType
+    var data: [FinancialBarChartData]
+    var periodType: PeriodType
+    let animationProgress: CGFloat
     
     // MARK: - Private properties
-    @State private var animationProgress: CGFloat = 0.0
-    
     private var displayDates: [Date] {
         periodType.getDisplayDates()
     }
     
-    private var xAxisDomain: ClosedRange<Date> {
-        guard let firstDate = displayDates.first,
-              let lastDate = displayDates.last else {
-            let defaultDate: Date = .init()
-            return defaultDate...defaultDate
-        }
-        return firstDate...lastDate
-    }
-    
     private var yAxisDomain: ClosedRange<Double> {
-        let maxAmount = data.map { $0.amount }.max() ?? .zero
-        return .zero...(maxAmount * 1.1)
+        let maxAmount: Double = data.map { $0.amount }.max() ?? .zero
+        return .zero...maxAmount
     }
     
+    // MARK: - Body
     var body: some View {
         Chart(data) { dataPoint in
             BarMark(
                 x: .value("Период", dataPoint.period, unit: periodType.xAxisStride),
-                y: .value("Сумма", animationProgress * dataPoint.amount)
+                yStart: .value("Сумма start", 0),
+                yEnd: .value("Сумма end", animationProgress * dataPoint.amount)
             )
             .foregroundStyle(dataPoint.category.color)
             .position(by: .value("Категория", dataPoint.category.localizedName),
                       axis: .horizontal
             )
+            .opacity(animationProgress == 0 ? 0 : 1)
         }
         .chartYScale(domain: yAxisDomain)
         .chartXAxis(.hidden)
         .chartYAxis(.hidden)
         .padding(.horizontal, Constants.Layout.defaultPadding / 2)
         .padding(.top, Constants.Layout.defaultPadding * 2)
-        .onAppear {
-            withAnimation(.easeInOut(duration: Constants.Animation.duration)) {
-                animationProgress = 1.0
-            }
-        }
-        .onChange(of: periodType) { _, _ in
-            animationProgress = 0.0
-            withAnimation(.easeInOut(duration: Constants.Animation.duration)) {
-                animationProgress = 1.0
-            }
-        }
-    }
-}
 
-#Preview {
-    FinancialBarChart(data: FinancialBarChartData.mockData, periodType: .day(start: Date()))
+    }
 }
 
 // MARK: - Constants
@@ -140,7 +145,7 @@ private enum Constants {
     }
     
     enum Text {
-        static let datefontSize: CGFloat = 12
+        static let dateFontSize: CGFloat = 12
         static let categoryFontSize: CGFloat = 14
     }
     

@@ -64,6 +64,11 @@ private extension CategoriesViewModel {
             .bind(to: output.templates)
             .disposed(by: disposeBag)
         
+        dataProvider.template.templateError
+            .observe(on: MainScheduler.asyncInstance)
+            .bind(to: output.error)
+            .disposed(by: disposeBag)
+        
         dataProvider.categories.categories
             .observe(on: MainScheduler.asyncInstance)
             .map { categories -> [CategoryItemType] in
@@ -71,6 +76,11 @@ private extension CategoriesViewModel {
                 return categoryItems + [.add]
             }
             .bind(to: output.categories)
+            .disposed(by: disposeBag)
+        
+        dataProvider.categories.categoriesError
+            .observe(on: MainScheduler.asyncInstance)
+            .bind(to: output.error)
             .disposed(by: disposeBag)
     }
     

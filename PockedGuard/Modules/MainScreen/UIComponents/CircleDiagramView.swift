@@ -8,18 +8,21 @@
 import SwiftUI
 
 struct CircleDiagramView: View {
+    // MARK: - Private properties
     private let segments: [SegmentDataModel]
-    private let totalValue: CGFloat
     private let currencySymbol: String
+    private let totalValue: CGFloat
     @State private var selectedSegmentIndex: Int?
     @State private var animationProgress: CGFloat = 0.0
     
+    // MARK: - init
     init(segments: [SegmentDataModel] = [], currencySymbol: String = "₽") {
         self.segments = segments
         self.totalValue = segments.reduce(.zero) { $0 + $1.value }
         self.currencySymbol = currencySymbol
     }
     
+    // MARK: - Body
     var body: some View {
         ZStack {
             diagram
@@ -31,7 +34,7 @@ struct CircleDiagramView: View {
                 animationProgress = 1.0
             }
         }
-        .onChange(of: segments) { oldSegments, newSegments in
+        .onChange(of: segments) { _, _ in
             selectedSegmentIndex = nil
             animationProgress = 0.0
             withAnimation(.easeInOut(duration: Constants.Animation.mainDuration)) {

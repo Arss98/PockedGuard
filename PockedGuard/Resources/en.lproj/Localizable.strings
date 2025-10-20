@@ -152,3 +152,16 @@
 "Onboarding.AnalyticsDescription" = "Подробные отчеты\nГрафики и диаграммы";
 "Onboarding.TemplatesDescription" = "Создавайте шаблоны\nдля регулярных трат";
 "Onboarding.NotificationDescription" = "Создавайте собственные\nнапоминания для разных ситуаций";
+
+/* Analytics */
+"Analytics.RatingExcellent" = "Отлично!";
+"Analytics.RatingGood" = "Так держать!";
+"Analytics.RatingNeutral" = "Стабильно";
+"Analytics.RatingWarning" = "Внимание!";
+"Analytics.ExpensesDecreased" = "Ваши расходы сократились на";
+"Analytics.IncomeIncreased" = "Ваш доход вырос на";
+"Analytics.LossDecreased" = "Ваш убыток уменьшился на";
+"Analytics.ExpensesIncreased" = "Ваши расходы увеличились на";
+"Analytics.IncomeDecreased" = "Ваш доход сократился на";
+"Analytics.LossIncreased" = "Ваш убыток возрос на";
+"Analytics.EmptyViewMessage" = "Начните вести учёт, и система покажет, как ваши финансы меняются во времени: за день, неделю, месяц или год.";

@@ -524,6 +524,7 @@ private extension CreateTemplateViewController {
             financeSegmentedControl.topAnchor.constraint(equalTo: contentLayoutGuide.topAnchor),
             financeSegmentedControl.centerXAnchor.constraint(equalTo: frameLayoutGuide.centerXAnchor),
             financeSegmentedControl.widthAnchor.constraint(equalToConstant: Constants.Layout.segmentControlWidth),
+            financeSegmentedControl.heightAnchor.constraint(equalToConstant: Constants.Layout.segmentedControlHeight),
             
             iconLabel.topAnchor.constraint(equalTo: financeSegmentedControl.bottomAnchor,
                                            constant: Constants.Layout.defaultPadding * 2),
@@ -584,6 +585,7 @@ private enum Constants {
         static let buttonCornerRadius: CGFloat = 10
         static let buttonHeight: CGFloat = 52
         static let segmentControlWidth: CGFloat = 216
+        static let segmentedControlHeight: CGFloat = 44
         static let circleSize: CGFloat = 36
         static let collectionSpacing: CGFloat = 12
         static let templatesCellSize: CGFloat = 60

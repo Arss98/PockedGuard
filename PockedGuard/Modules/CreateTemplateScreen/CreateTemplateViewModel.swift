@@ -103,6 +103,11 @@ private extension CreateTemplateViewModel {
             .bind(to: cacheCategories)
             .disposed(by: disposeBag)
         
+        dataProvider.categories.categoriesError
+            .observe(on: MainScheduler.asyncInstance)
+            .bind(to: output.error)
+            .disposed(by: disposeBag)
+        
         input.transactionType
             .compactMap { $0 }
             .bind(to: dataProvider.categories.currentTransactionType)

@@ -111,13 +111,10 @@ extension NotificationRepository {
 private extension NotificationRepository {
     func fetchNotifications() {
         coreDataService.fetch(NotificationModel.self, predicate: nil, sortDescriptors: sortDescriptors)
+            .asObservable()
             .subscribe(on: backgroundScheduler)
             .observe(on: MainScheduler.instance)
-            .subscribe { [weak self] notifications in
-                self?.notifications.accept(notifications)
-            } onFailure: { error in
-                print("Error fetching notifications: \(error)")
-            }
+            .bind(to: notifications)
             .disposed(by: disposeBag)
     }
 }

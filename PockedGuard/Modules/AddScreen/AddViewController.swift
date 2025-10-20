@@ -559,6 +559,7 @@ private extension AddViewController {
                                                          constant: Constants.Layout.defaultPadding),
             financeSegmentedControl.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             financeSegmentedControl.widthAnchor.constraint(equalToConstant: Constants.Layout.segmentControlWidth),
+            financeSegmentedControl.heightAnchor.constraint(equalToConstant: Constants.Layout.segmentedControlHeight),
             
             closeButton.centerYAnchor.constraint(equalTo: financeSegmentedControl.centerYAnchor),
             closeButton.widthAnchor.constraint(equalToConstant: Constants.Layout.defaultButtonSize),
@@ -655,6 +656,7 @@ private enum Constants {
         static let accountsCellWidth: CGFloat = 160
         static let accountsCollectionSpacing: CGFloat = 8
         static let defaultButtonSize: CGFloat = 44
+        static let segmentedControlHeight: CGFloat = 44
     }
     
     enum Animation {

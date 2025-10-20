@@ -11,6 +11,7 @@ import CoreData
 
 protocol TemplateRepositoryProtocol {
     var templates: BehaviorRelay<[TemplateDomainModel]> { get }
+    var templateError: PublishRelay<Error> { get }
     var currentTransactionType: BehaviorRelay<TransactionType> { get }
     func getTemplates(type: TransactionType?) -> [TemplateDomainModel]
     func createTemplate(_ tempalte: TemplateDomainModel) -> Completable
@@ -22,6 +23,7 @@ protocol TemplateRepositoryProtocol {
 final class TemplateRepository: TemplateRepositoryProtocol {
     // MARK: - Public properties
     let templates: BehaviorRelay<[TemplateDomainModel]> = .init(value: [])
+    let templateError: PublishRelay<Error> = .init()
     let currentTransactionType: BehaviorRelay<TransactionType> = .init(value: .expense)
     
     // MARK: - Private properties
@@ -149,8 +151,8 @@ private extension TemplateRepository {
             .subscribe { [weak self] templates in
                 self?.cacheTemplates(templates)
                 self?.updateTemplatesForCurrentType()
-            } onFailure: { error in
-                print("Error fetching all templates: \(error)")
+            } onFailure: { [weak self] error in
+                self?.templateError.accept(error)
             }
             .disposed(by: disposeBag)
     }

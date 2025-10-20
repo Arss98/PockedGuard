@@ -10,6 +10,7 @@ import RxCocoa
 
 protocol CategoryRepositoryProtocol {
     var categories: BehaviorRelay<[CategoryDomainModel]> { get }
+    var categoriesError: PublishRelay<Error> { get }
     var currentTransactionType: BehaviorRelay<TransactionType> { get }
     var dataInitialized: PublishRelay<Void> { get }
     func getCategories(type: TransactionType?) -> [CategoryDomainModel]
@@ -22,6 +23,7 @@ protocol CategoryRepositoryProtocol {
 final class CategoryRepository: CategoryRepositoryProtocol {
     // MARK: - Public properties
     let categories: BehaviorRelay<[CategoryDomainModel]> = .init(value: [])
+    let categoriesError: PublishRelay<Error> = .init()
     let currentTransactionType: BehaviorRelay<TransactionType> = .init(value: .expense)
     let dataInitialized: PublishRelay<Void> = .init()
     
@@ -139,8 +141,8 @@ private extension CategoryRepository {
             .subscribe { [weak self] categories in
                 self?.cacheCategories(categories)
                 self?.updateCategoriesForCurrentType()
-            } onFailure: { error in
-                print("Error fetching all categories: \(error)")
+            } onFailure: { [weak self] error in
+                self?.categoriesError.accept(error)
             }
             .disposed(by: disposeBag)
     }

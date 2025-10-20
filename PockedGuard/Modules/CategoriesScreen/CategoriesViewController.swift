@@ -528,6 +528,7 @@ private extension CategoriesViewController {
             financeSegmentedControl.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
             financeSegmentedControl.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             financeSegmentedControl.widthAnchor.constraint(equalToConstant: Constants.Layout.segmentControlWidth),
+            financeSegmentedControl.heightAnchor.constraint(equalToConstant: Constants.Layout.segmentedControlHeight),
             
             scrollView.topAnchor.constraint(equalTo: financeSegmentedControl.bottomAnchor),
             scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -583,6 +584,7 @@ private extension CategoriesViewController {
 private enum Constants {
     enum Layout {
         static let segmentControlWidth: CGFloat = 216
+        static let segmentedControlHeight: CGFloat = 44
         static let padding: CGFloat = 16
         static let verticalPadding: CGFloat = 24
         static let spacing: CGFloat = 10

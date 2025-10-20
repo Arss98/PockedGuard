@@ -11,15 +11,18 @@ import CoreData
 
 protocol TransactionRepositoryProtocol {
     var transactions: BehaviorRelay<[TransactionDomainModel]> { get }
+    var transactionByAnalytics: BehaviorRelay<[TransactionDomainModel]> { get }
+    var periodByAnalytics: BehaviorRelay<PeriodType> { get }
     func setFilters(type: TransactionType?, accountId: UUID?, period: PeriodType?)
     func createTransaction(_ transaction: TransactionDomainModel) -> Completable
-    func getTransactionsAnalytics(period: PeriodType) -> Single<[TransactionDomainModel]>
     func deleteTransaction(with id: UUID) -> Completable
 }
 
 final class TransactionRepository: TransactionRepositoryProtocol {
     // MARK: - Public properties
     let transactions: BehaviorRelay<[TransactionDomainModel]> = .init(value: [])
+    let transactionByAnalytics: BehaviorRelay<[TransactionDomainModel]> = .init(value: [])
+    let periodByAnalytics: BehaviorRelay<PeriodType> = .init(value: .day())
     
     // MARK: - Private properties
     private let coreDataService: CoreDataServiceProtocol
@@ -77,35 +80,11 @@ extension TransactionRepository {
             .observe(on: MainScheduler.instance)
             .subscribe(onCompleted: {
                 self.fetchTransactions()
+                self.fetchTransactionsAnalytics(period: self.periodByAnalytics.value)
                 completable(.completed)
             }, onError: { error in
                 completable(.error(error))
             })
-        }
-    }
-    
-    func getTransactionsAnalytics(period: PeriodType) -> Single<[TransactionDomainModel]> {
-        return Single.create { [weak self] single in
-            guard let self else {
-                single(.failure(RepositoryError.deinitialized))
-                return Disposables.create()
-            }
-            guard let compoundPredicate = self.createCompoundPredicate(period: period) else {
-                single(.success([]))
-                return Disposables.create()
-            }
-        
-            self.coreDataService.fetch(Transaction.self, predicate: compoundPredicate, sortDescriptors: nil)
-                .subscribe(on: backgroundScheduler)
-                .observe(on: MainScheduler.instance)
-                .subscribe { allTransaction in
-                    single(.success(allTransaction))
-                } onFailure: { error in
-                    single(.failure(error))
-                }
-                .disposed(by: self.disposeBag)
-            
-            return Disposables.create()
         }
     }
 
@@ -121,6 +100,7 @@ extension TransactionRepository {
                 .observe(on: MainScheduler.instance)
                 .subscribe(onCompleted: {
                     self.fetchTransactions()
+                    self.fetchTransactionsAnalytics(period: self.periodByAnalytics.value)
                     completable(.completed)
                 }, onError: { error in
                     completable(.error(error))
@@ -141,6 +121,14 @@ private extension TransactionRepository {
             repository.fetchTransactions()
         }
         .disposed(by: disposeBag)
+        
+        periodByAnalytics
+            .distinctUntilChanged()
+            .subscribe(on: backgroundScheduler)
+            .subscribe(with: self) { repository, period in
+                repository.fetchTransactionsAnalytics(period: period)
+            }
+            .disposed(by: disposeBag)
     }
     
     func fetchTransactions() {
@@ -153,13 +141,24 @@ private extension TransactionRepository {
         let sortDescriptors: [NSSortDescriptor] = [NSSortDescriptor(key: "date", ascending: false)]
         
         coreDataService.fetch(Transaction.self, predicate: predicate, sortDescriptors: sortDescriptors)
+            .asObservable()
             .subscribe(on: backgroundScheduler)
             .observe(on: MainScheduler.instance)
-            .subscribe { [weak self] transactions in
-                self?.transactions.accept(transactions)
-            } onFailure: { error in
-                print("Error fetching transactions: \(error)")
-            }
+            .bind(to: transactions)
+            .disposed(by: disposeBag)
+    }
+    
+    func fetchTransactionsAnalytics(period: PeriodType) {
+        guard let compoundPredicate: NSCompoundPredicate = createCompoundPredicate(period: period) else {
+            transactionByAnalytics.accept([])
+            return
+        }
+        
+        self.coreDataService.fetch(Transaction.self, predicate: compoundPredicate, sortDescriptors: nil)
+            .asObservable()
+            .subscribe(on: backgroundScheduler)
+            .observe(on: MainScheduler.instance)
+            .bind(to: transactionByAnalytics)
             .disposed(by: disposeBag)
     }
     

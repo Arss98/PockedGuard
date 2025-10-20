@@ -100,6 +100,11 @@ private extension AddViewModel {
             .bind(to: output.templates)
             .disposed(by: disposeBag)
         
+        dataProvider.template.templateError
+            .observe(on: MainScheduler.asyncInstance)
+            .bind(to: output.error)
+            .disposed(by: disposeBag)
+        
         dataProvider.categories.categories
             .observe(on: MainScheduler.asyncInstance)
             .subscribe(onNext: { [weak self] categories in
@@ -111,8 +116,12 @@ private extension AddViewModel {
                 self?.output.categories.accept(categories)
             })
             .disposed(by: disposeBag)
+        
+        dataProvider.categories.categoriesError
+            .observe(on: MainScheduler.asyncInstance)
+            .bind(to: output.error)
+            .disposed(by: disposeBag)
     }
-    
     
     func fetchData(_ type: TransactionType) {
         dataProvider.categories.currentTransactionType.accept(type)

@@ -16,6 +16,7 @@ final class MainViewController: BaseViewController {
     private lazy var financeSegmentedControl: CustomSegmentedControl = {
         let segmentedControl: CustomSegmentedControl = .init(items: Constants.SegmentedControl.financeItems)
         segmentedControl.widthAnchor.constraint(equalToConstant: Constants.Layout.segmentControlWidth).isActive = true
+        segmentedControl.heightAnchor.constraint(equalToConstant: Constants.Layout.segmentedControlHeight).isActive = true
         return segmentedControl
     }()
     
@@ -405,6 +406,7 @@ private extension MainViewController {
                                                             constant: Constants.Layout.defaultPadding),
             periodSegmentedControl.trailingAnchor.constraint(equalTo: view.trailingAnchor,
                                                              constant: -Constants.Layout.defaultPadding),
+            periodSegmentedControl.heightAnchor.constraint(equalToConstant: Constants.Layout.segmentedControlHeight),
             
             transactionsBackgroundView.topAnchor.constraint(equalTo: periodSegmentedControl.bottomAnchor,
                                                             constant: Constants.Layout.defaultPadding),
@@ -523,6 +525,7 @@ private enum Constants {
         static let multiplier: CGFloat = 0.95
         static let periodButtonSize: CGFloat = 44
         static let segmentControlWidth: CGFloat = 216
+        static let segmentedControlHeight: CGFloat = 44
     }
     
     enum Animation {
