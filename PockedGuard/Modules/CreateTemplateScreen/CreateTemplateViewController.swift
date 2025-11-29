@@ -25,7 +25,7 @@ final class CreateTemplateViewController: BaseViewController {
         label.translatesAutoresizingMaskIntoConstraints = false
         label.textColor = .white
         label.font = .systemFont(ofSize: Constants.Text.titleFontSize, weight: .semibold)
-        label.text = .Localized.Add.addTemplate.localized
+        label.text = L10n.Categories.addTemplate
         
         return label
     }()
@@ -41,7 +41,7 @@ final class CreateTemplateViewController: BaseViewController {
     private lazy var iconLabel: UILabel = {
         let label: UILabel = .init()
         label.translatesAutoresizingMaskIntoConstraints = false
-        label.text = .Localized.Common.icon.localized
+        label.text = L10n.Common.icon
         label.textColor = .white
         label.font = .systemFont(ofSize: Constants.Text.fontSize, weight: .semibold)
         return label
@@ -70,16 +70,16 @@ final class CreateTemplateViewController: BaseViewController {
     private lazy var categoryLabel: UILabel = {
         let label: UILabel = .init()
         label.translatesAutoresizingMaskIntoConstraints = false
-        label.text = .Localized.Common.categoryLabelTitle.localized
+        label.text = L10n.Finance.Categories.categories
         label.font = .systemFont(ofSize: Constants.Text.fontSize, weight:.semibold)
         label.textColor = .white
         return label
     }()
-    
+
     private lazy var categoryExpandedButton: UIButton = {
         let button: UIButton = .init(type: .system)
         button.translatesAutoresizingMaskIntoConstraints = false
-        button.setTitle(.Localized.Common.still.localized, for: .normal)
+        button.setTitle(L10n.Common.still, for: .normal)
         button.tintColor = .appForegroundSecondary
         button.titleLabel?.font = .systemFont(ofSize: Constants.Text.fontSize, weight: .regular)
         return button
@@ -125,8 +125,8 @@ final class CreateTemplateViewController: BaseViewController {
     private lazy var amountTextField: CustomTextField = {
         let textField: CustomTextField = .init()
         textField.configure(
-            with: .Localized.Common.amount.localized,
-            placeholder: .Localized.Add.amountPlaceholder.localized,
+            with: L10n.Common.amount,
+            placeholder: L10n.Categories.amountPlaceholder,
             keyboardType: .decimalPad,
             titleColor: .white
         )
@@ -143,14 +143,14 @@ final class CreateTemplateViewController: BaseViewController {
     
     private lazy var amountDescriptionTooltip: InfoTooltipView = {
         let tooltip: InfoTooltipView = .init()
-        tooltip.configure(with: .Localized.Add.templateAmountInfo.localized)
+        tooltip.configure(with: L10n.Categories.templateAmountInfo)
         return tooltip
     }()
     
     private lazy var doneButton: UIButton = {
         let button: UIButton = .init(type: .system)
         button.translatesAutoresizingMaskIntoConstraints = false
-        button.setTitle(.Localized.Common.done.localized, for: .normal)
+        button.setTitle(L10n.Common.done, for: .normal)
         button.backgroundColor = .appMainBlue
         button.tintColor = .white
         button.layer.cornerRadius = Constants.Layout.buttonCornerRadius
@@ -299,7 +299,7 @@ private extension CreateTemplateViewController {
             .disposed(by: disposeBag)
         
         viewModel.output.categoryButtonTitle
-            .asDriver(onErrorJustReturn: .Localized.Common.still.localized)
+            .asDriver(onErrorJustReturn: L10n.Common.still)
             .drive(categoryExpandedButton.rx.title(for: .normal))
             .disposed(by: disposeBag)
         
@@ -444,17 +444,17 @@ private extension CreateTemplateViewController {
 private extension CreateTemplateViewController {
     func showDuplicateIconAlert(for duplicateTemplate: TemplateDomainModel) {
         let alert: UIAlertController = .init(
-            title: .Localized.Alert.duplicateTemplateIconTitle.localized,
-            message: .Localized.Alert.duplicateTemplateIconMessage.localized,
+            title: L10n.Alerts.DuplicateTemplateIcon.title,
+            message: L10n.Alerts.DuplicateTemplateIcon.message,
             preferredStyle: .alert
         )
         alert.overrideUserInterfaceStyle = .dark
         
-        let replaceAction: UIAlertAction = .init(title: .Localized.Common.replace.localized,style: .destructive) { [weak self] _ in
+        let replaceAction: UIAlertAction = .init(title: L10n.Common.replace, style: .destructive) { [weak self] _ in
             self?.viewModel.confirmReplacement(replacing: duplicateTemplate.id)
         }
         
-        let cancelAction: UIAlertAction = .init(title: .Localized.Common.cancel.localized, style: .cancel) { [weak self] _ in
+        let cancelAction: UIAlertAction = .init(title: L10n.Common.cancel, style: .cancel) { [weak self] _ in
             self?.viewModel.output.isLoading.accept(false)
         }
         
@@ -601,8 +601,8 @@ private enum Constants {
     
     enum SegmentedControl {
         static let financeItems: [String] = [
-            .Localized.Common.expenses.localized,
-            .Localized.Common.income.localized
+            L10n.Finance.expenses,
+            L10n.Finance.income
         ]
     }
 }

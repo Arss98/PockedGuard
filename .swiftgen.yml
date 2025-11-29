@@ -1,0 +1,18 @@
+strings:
+  inputs:
+    - PockedGuard/Sources/en.lproj/Localizable.strings
+  outputs:
+    - templateName: structured-swift5
+      output: PockedGuard/Sources/Generated/L10n.swift
+      params:
+        enumName: L10n
+        accessibility: internal
+        comments: true
+        flattenSeparator: _
+
+xcassets:
+  inputs:
+    - PockedGuard/Sources/Assets.xcassets
+  outputs:
+    - templateName: swift5
+      output: PockedGuard/Sources/Generated/Assets.swift

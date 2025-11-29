@@ -83,7 +83,7 @@ private extension CircleDiagramView {
               !segments.isEmpty,
               totalValue > 0,
               segments.indices.contains(index) else {
-            return .Localized.Common.total.localized
+            return L10n.Common.total
         }
         return segments[index].categoryName
     }

@@ -124,9 +124,7 @@ private extension CreateTemplateViewModel {
         input.categoryCollectionExpanded
             .distinctUntilChanged()
             .map { expanded in
-                expanded ?
-                String.Localized.Common.wrap.localized :
-                String.Localized.Common.still.localized
+                expanded ? L10n.Common.wrap : L10n.Common.still
             }
             .bind(to: output.categoryButtonTitle)
             .disposed(by: disposeBag)
@@ -254,8 +252,10 @@ private enum CustomError: Error, LocalizedError {
     
     var errorDescription: String? {
         switch self {
-        case .emptySelectedIcon: return .Localized.Error.emptyTemplateIcon.localized
-        case .emptySelectedCategoryOrAmount: return .Localized.Error.emptyTemplateCategoryOrAmount.localized
+        case .emptySelectedIcon:
+            return L10n.Error.templateIconEmpty
+        case .emptySelectedCategoryOrAmount:
+            return L10n.Error.templateCategoryOrAmountEmpty
         }
     }
 }

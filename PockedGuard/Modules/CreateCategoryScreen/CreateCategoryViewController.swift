@@ -18,7 +18,7 @@ final class CreateCategoryViewController: BaseViewController {
         label.translatesAutoresizingMaskIntoConstraints = false
         label.textColor = .white
         label.font = .systemFont(ofSize: Constants.Text.titleFontSize, weight: .semibold)
-        label.text = .Localized.Add.addCategory.localized
+        label.text = L10n.Categories.addCategory
         
         return label
     }()
@@ -34,8 +34,8 @@ final class CreateCategoryViewController: BaseViewController {
     private lazy var categoryNameTextField: CustomTextField = {
         let textfield: CustomTextField = .init()
         textfield.configure(
-            with: .Localized.Add.categoryNameLabel.localized,
-            placeholder: .Localized.Add.categoryNamePlaceholder.localized,
+            with: L10n.Categories.categoryName,
+            placeholder: L10n.Categories.categoryNamePlaceholder,
             titleColor: .white
         )
         return textfield
@@ -44,7 +44,7 @@ final class CreateCategoryViewController: BaseViewController {
     private lazy var colorCategoryLabel: UILabel = {
         let label: UILabel = .init()
         label.translatesAutoresizingMaskIntoConstraints = false
-        label.text = .Localized.Add.colorCategoryTitle.localized
+        label.text = L10n.Categories.colorTitle
         label.textColor = .white
         label.font = .systemFont(ofSize: Constants.Text.fontSize, weight: .semibold)
         return label
@@ -78,7 +78,7 @@ final class CreateCategoryViewController: BaseViewController {
     private lazy var doneButton: UIButton = {
         let button: UIButton = .init(type: .system)
         button.translatesAutoresizingMaskIntoConstraints = false
-        button.setTitle(.Localized.Common.done.localized, for: .normal)
+        button.setTitle(L10n.Common.done, for: .normal)
         button.backgroundColor = .appMainBlue
         button.tintColor = .white
         button.layer.cornerRadius = Constants.Layout.buttonCornerRadius
@@ -256,7 +256,7 @@ extension CreateCategoryViewController: UIColorPickerViewControllerDelegate {
         let selectedColor: UIColor = viewController.selectedColor
         if let hexColor: String = selectedColor.toHex() {
             viewModel.addCustomColor(hexColor)
-            showToast(message: .Localized.Alert.addColorMessage.localized)
+            showToast(message: L10n.Alerts.colorAdded)
         }
     }
 }
@@ -312,7 +312,7 @@ private extension CreateCategoryViewController {
     func setupInitialValues() {
         if case .edit = viewModel.mode {
             categoryNameTextField.text = viewModel.input.categoryName.value
-            titleLabel.text = .Localized.Add.editCategory.localized
+            titleLabel.text = L10n.Categories.addCategory
         }
         
         let initialIndex: Int = Int(viewModel.input.transactionType.value.rawValue)
@@ -416,8 +416,8 @@ private enum Constants {
     
     enum SegmentedControl {
         static let financeItems: [String] = [
-            .Localized.Common.expenses.localized,
-            .Localized.Common.income.localized
+            L10n.Finance.expenses,
+            L10n.Finance.income
         ]
     }
 }

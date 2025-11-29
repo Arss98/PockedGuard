@@ -202,13 +202,13 @@ private enum CustomError: Error, LocalizedError {
     var errorDescription: String? {
         switch self {
         case .invalidTitle:
-            return .Localized.Error.titleEmpty.localized
+            return L10n.Error.titleEmpty
         case .invalidNotes:
-            return .Localized.Error.descriptionEmpty.localized
+            return L10n.Error.descriptionEmpty
         case .notificationSchedulingFailed:
-            return .Localized.Error.notificationSchedulingFailed.localized
+            return L10n.Error.Notifications.schedulingFailed
         case .notificationUpdateFailed:
-            return .Localized.Error.notificationUpdateFailed.localized
+            return L10n.Error.Notifications.updateFailed
         }
     }
 }

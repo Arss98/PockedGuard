@@ -13,7 +13,7 @@ final class AddAccountCell: UICollectionViewCell {
     private lazy var addButton: UIButton = {
         let button: UIButton = .init(type: .system)
         button.translatesAutoresizingMaskIntoConstraints = false
-        button.setTitle(.Localized.Add.addAccount.localized, for: .normal)
+        button.setTitle(L10n.Categories.addAccount, for: .normal)
         button.titleLabel?.font = .systemFont(ofSize: Constants.Text.fontSize, weight: .regular)
         button.tintColor = .white
         button.backgroundColor = .appMainBlue

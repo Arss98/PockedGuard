@@ -108,7 +108,7 @@ private extension MainViewModel {
 
     func groupTransactions(_ transactions: [TransactionDomainModel]) {
         let totalAmount: Double = transactions.reduce(0) { $0 + $1.amount }
-        let groupTransactions: [String: [TransactionDomainModel]] = Dictionary(grouping: transactions, by: { $0.category?.name ?? .Localized.TransactionCategories.other.localized })
+        let groupTransactions: [String: [TransactionDomainModel]] = Dictionary(grouping: transactions, by: { $0.category?.name ?? L10n.TransactionCategories.other })
         
         let sections: [TransactionSection] = groupTransactions.map { key, value in
             let categoryAmount: Double = value.reduce(0) { $0 + $1.amount }
@@ -163,11 +163,12 @@ private enum CustomError: Error, LocalizedError  {
     var errorDescription: String? {
         switch self {
         case .failedToCreateDefaultData:
-            return .Localized.Error.failedToCreateDefaultData.localized
+            return L10n.Error.Data.createDefaultFailed
         case .failedToFetchTransactions:
-            return .Localized.Error.transactionFetchFailed.localized
+            return L10n.Error.Data.transactionsFetchFailed
         case .failedToFetchAccounts:
-            return .Localized.Error.accountFetchFailed.localized
+            return L10n.Error.Data.accountsFetchFailed
+                
         }
     }
 }

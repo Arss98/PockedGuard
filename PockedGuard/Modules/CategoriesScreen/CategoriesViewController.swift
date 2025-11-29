@@ -33,7 +33,7 @@ final class CategoriesViewController: BaseViewController {
         label.translatesAutoresizingMaskIntoConstraints = false
         label.textColor = .white
         label.font = .systemFont(ofSize: Constants.Text.fontSize, weight: .semibold)
-        label.text = .Localized.Common.accountLabelTitle.localized
+        label.text = L10n.Finance.Categories.accounts
         return label
     }()
     
@@ -61,7 +61,7 @@ final class CategoriesViewController: BaseViewController {
     private lazy var categoryLabel: UILabel = {
         let label: UILabel = .init()
         label.translatesAutoresizingMaskIntoConstraints = false
-        label.text = .Localized.Common.categoryLabelTitle.localized
+        label.text = L10n.Finance.Categories.categories
         label.font = .systemFont(ofSize: Constants.Text.fontSize, weight:.semibold)
         label.textColor = .white
         return label
@@ -109,7 +109,7 @@ final class CategoriesViewController: BaseViewController {
         label.translatesAutoresizingMaskIntoConstraints = false
         label.textColor = .white
         label.font = .systemFont(ofSize: Constants.Text.fontSize, weight: .semibold)
-        label.text = .Localized.Common.templatesLabelTitle.localized
+        label.text = L10n.Finance.Categories.templates
         return label
     }()
     
@@ -275,17 +275,17 @@ extension CategoriesViewController: UICollectionViewDelegate {
     
     private func createAccountContextMenu(_ account: AccountDomainModel) -> UIContextMenuConfiguration {
         return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { [weak self] _ in
-            let editAction: UIAction = .init(title: .Localized.Common.edit.localized,
+            let editAction: UIAction = .init(title: L10n.Common.edit,
                                       image: UIImage(systemName: "pencil")) { _ in
                 self?.viewModel.input.editAccountTapped.onNext(account)
             }
             
-            let setupPrimary: UIAction = .init(title: .Localized.Add.setupIsPrimary.localized,
+            let setupPrimary: UIAction = .init(title: L10n.Categories.setPrimary,
                                                image: UIImage(systemName: "checkmark.circle.fill")) { _ in
                 self?.viewModel.input.isPrimaryAccountTapped.onNext(account)
             }
             
-            let deleteAction: UIAction = .init(title: .Localized.Common.delete.localized,
+            let deleteAction: UIAction = .init(title: L10n.Common.delete,
                                         image: UIImage(systemName: "trash"),
                                         attributes: .destructive) { _ in
                 self?.viewModel.input.deleteAccountTapped.onNext(account.id)
@@ -297,12 +297,12 @@ extension CategoriesViewController: UICollectionViewDelegate {
     
     private func createCategoryContextMenu(_ category: CategoryDomainModel) -> UIContextMenuConfiguration {
         return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { [weak self] _ in
-            let editAction: UIAction = .init(title: .Localized.Common.edit.localized,
+            let editAction: UIAction = .init(title: L10n.Common.edit,
                                       image: UIImage(systemName: "pencil")) { _ in
                 self?.viewModel.input.categoryAction.onNext((category, .edit))
             }
             
-            let deleteAction: UIAction = .init(title: .Localized.Common.delete.localized,
+            let deleteAction: UIAction = .init(title: L10n.Common.delete,
                                         image: UIImage(named: "trash"),
                                         attributes: .destructive) { _ in
                 self?.viewModel.input.categoryAction.onNext((category, .delete))
@@ -314,12 +314,12 @@ extension CategoriesViewController: UICollectionViewDelegate {
     
     private func createTemplateContextMenu(_ template: TemplateDomainModel) -> UIContextMenuConfiguration {
         return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { [weak self] _ in
-            let editAction: UIAction = .init(title: .Localized.Common.edit.localized,
+            let editAction: UIAction = .init(title: L10n.Common.edit,
                                       image: UIImage(systemName: "pencil")) { _ in
                 self?.viewModel.input.editTemplateTapped.onNext(template)
             }
             
-            let deleteAction: UIAction = .init(title: .Localized.Common.delete.localized,
+            let deleteAction: UIAction = .init(title: L10n.Common.delete,
                                         image: UIImage(systemName: "trash"),
                                         attributes: .destructive) { _ in
                 self?.viewModel.input.deleteTemplateTapped.onNext(template.id)
@@ -455,13 +455,13 @@ private extension CategoriesViewController {
     func showSystemCategoryAlert(category: CategoryDomainModel, action: CategoriesViewModel.CategoryAction) {
         let actionTitle: String
         switch action {
-        case .delete: actionTitle = .Localized.Common.delete.localized
-        case .edit: actionTitle = .Localized.Common.edit.localized
+        case .delete: actionTitle = L10n.Common.delete
+        case .edit: actionTitle = L10n.Common.edit
         }
         
         showConfirmationAlert(
-            title: .Localized.Alert.systemCategoryTitle.localized,
-            message: String(format: .Localized.Alert.systemCategoryMessage.localized, category.name, actionTitle),
+            title: L10n.Alerts.SystemCategory.title,
+            message: L10n.Alerts.SystemCategory.message(category.name, actionTitle),
             confirmAction: { [weak self] in
                 self?.viewModel.input.confirmCategoryAction.onNext((category, action))
             }
@@ -470,8 +470,8 @@ private extension CategoriesViewController {
     
     func showPrimaryAccountAlert(account: AccountDomainModel) {
         showConfirmationAlert(
-            title: .Localized.Alert.primaryAccountTitle.localized,
-            message: String(format: .Localized.Alert.primaryAccountMessage.localized, account.name),
+            title: L10n.Alerts.PrimaryAccount.title,
+            message: L10n.Alerts.PrimaryAccount.message(account.name),
             confirmAction: { [weak self] in
                 self?.viewModel.input.confirmSetPrimaryAccount.onNext(account)
             }
@@ -482,7 +482,7 @@ private extension CategoriesViewController {
 // MARK: - UI Setup
 private extension CategoriesViewController {
     func setupUI() {
-        title = .Localized.Common.categoriesTitle.localized
+        title = L10n.Finance.Categories.title
         
         view.addSubview(financeSegmentedControl)
         view.addSubview(scrollView)
@@ -608,8 +608,8 @@ private enum Constants {
     
     enum SegmentedControl {
         static let financeItems: [String] = [
-            .Localized.Common.expenses.localized,
-            .Localized.Common.income.localized
+            L10n.Finance.expenses,
+            L10n.Finance.income
         ]
     }
 }

@@ -183,11 +183,11 @@ private enum CustomError: Error, LocalizedError {
     var errorDescription: String? {
         switch self {
         case .emptyCategoryName:
-            return .Localized.Error.invalidNameCategory.localized
+            return L10n.Error.categoryNameInvalid
         case .emptySelectedColor:
-            return .Localized.Error.emptyCategoryColor.localized
+            return L10n.Error.categoryColorEmpty
         case .duplicateCategoryName:
-            return .Localized.Error.duplicateCategoryName.localized
+            return L10n.Error.categoryNameDuplicate
         }
     }
 }

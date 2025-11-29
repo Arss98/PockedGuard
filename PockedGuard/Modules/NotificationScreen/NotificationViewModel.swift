@@ -155,11 +155,11 @@ private enum CustomError: Error, LocalizedError {
     var errorDescription: String? {
         switch self {
         case .notificationUpdateFailed:
-            return .Localized.Error.notificationUpdateFailed.localized
+            return L10n.Error.Notifications.updateFailed
         case .notificationFetchFailed:
-            return .Localized.Error.notificationFetchFailed.localized
+            return L10n.Error.Notifications.fetchFailed
         case .notificationDeleteFailed:
-            return .Localized.Error.notificationDeleteFailed.localized
+            return L10n.Error.Notifications.deleteFailed
         }
     }
 }

@@ -68,9 +68,16 @@ private extension BaseViewController {
         let apearance: UINavigationBarAppearance = .init()
         apearance.backgroundColor = .appBackground
         apearance.titleTextAttributes = [.foregroundColor: UIColor.white]
+
+        let buttonApearance: UIBarButtonItemAppearance = .init()
+        buttonApearance.normal.titleTextAttributes = [.foregroundColor: UIColor.white]
+        buttonApearance.normal.backgroundImage = nil
+        
+        apearance.buttonAppearance = buttonApearance
         
         navigationController?.navigationBar.standardAppearance = apearance
         navigationController?.navigationBar.scrollEdgeAppearance = apearance
+        navigationController?.navigationBar.tintColor = .white
     }
     
     func setConstraints() {
@@ -100,7 +107,7 @@ extension BaseViewController {
         case right
     }
     
-    func setupLeftBarButtonItem(at position: BarButtonPosition = .left, image: UIImage, tintColor: UIColor = .white) -> ControlEvent<Void> {
+    func setupBarButtonItem(at position: BarButtonPosition = .left, image: UIImage?, tintColor: UIColor = .white) -> ControlEvent<Void> {
         let button: UIBarButtonItem = .init()
         button.image = image
         button.tintColor = tintColor
@@ -133,13 +140,13 @@ extension BaseViewController {
     }
     
     func showErrorAlert(
-        title: String? = .Localized.Error.title.localized,
+        title: String? = L10n.Error.title,
         message: String,
         handler: (() -> Void)? = nil
     ) {
         let alert: UIAlertController = .init(title: title, message: message, preferredStyle: .alert)
         alert.overrideUserInterfaceStyle = .dark
-        let action: UIAlertAction = .init(title: .Localized.Common.ok.localized, style: .default) { _ in
+        let action: UIAlertAction = .init(title: L10n.Common.ok, style: .default) { _ in
             handler?()
         }
         
@@ -191,7 +198,7 @@ extension BaseViewController {
                 sheet.addAction(action)
             }
             
-            let cancelAction: UIAlertAction = .init(title: .Localized.Common.cancel.localized, style: .cancel) { _ in
+            let cancelAction: UIAlertAction = .init(title: L10n.Common.cancel, style: .cancel) { _ in
                 observer.on(.next(nil))
                 observer.on(.completed)
             }
@@ -208,7 +215,7 @@ extension BaseViewController {
     func showConfirmationAlert(
         title: String,
         message: String,
-        confirmButtonTitle: String = .Localized.Common.resume.localized,
+        confirmButtonTitle: String = L10n.Common.continue,
         confirmButtonStyle: UIAlertAction.Style = .destructive,
         confirmAction: @escaping () -> Void
     ) {
@@ -220,7 +227,7 @@ extension BaseViewController {
         alert.overrideUserInterfaceStyle = .dark
         
         let cancelAction = UIAlertAction(
-            title: .Localized.Common.cancel.localized,
+            title: L10n.Common.cancel,
             style: .cancel
         )
         

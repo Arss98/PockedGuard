@@ -52,7 +52,7 @@ final class NotificationViewController: BaseViewController {
         label.textAlignment = .center
         label.alpha = .zero
         label.isHidden = true
-        label.text = .Localized.Notification.emptyLabel.localized
+        label.text = L10n.Notifications.empty
         label.numberOfLines = Constants.Text.numberOfLines
         
         return label
@@ -61,7 +61,7 @@ final class NotificationViewController: BaseViewController {
     private lazy var createNotificationButton: UIButton = {
         let button: UIButton = .init(type: .system)
         button.translatesAutoresizingMaskIntoConstraints = false
-        button.setTitle(.Localized.Notification.createTitle.localized, for: .normal)
+        button.setTitle(L10n.Notifications.createTitle, for: .normal)
         button.backgroundColor = .appMainBlue
         button.tintColor = .white
         button.layer.cornerRadius = Constants.Layout.buttonCornerRadius
@@ -121,7 +121,7 @@ extension NotificationViewController: UICollectionViewDelegate {
     
     func makeContextMenuAction(for indexPath: IndexPath) -> UIMenu {
         let editAction: UIAction = .init(
-            title: .Localized.Common.edit.localized,
+            title: L10n.Common.edit,
             image: UIImage(systemName: "pencil")) { [weak self] _ in
                 guard let self,
                       let notification: NotificationDomainModel = self.viewModel.getNotification(at: indexPath) else {
@@ -131,7 +131,7 @@ extension NotificationViewController: UICollectionViewDelegate {
             }
         
         let deleteAction: UIAction = .init(
-            title: .Localized.Common.delete.localized,
+            title: L10n.Common.delete,
             image: UIImage(systemName: "trash"),
             attributes: .destructive) { [weak self] _ in
                 self?.viewModel.input.deleteNotification.onNext(indexPath)
@@ -144,7 +144,7 @@ extension NotificationViewController: UICollectionViewDelegate {
 // MARK: - Private methods
 private extension NotificationViewController {
     func setupUI() {
-        title = .Localized.Notification.title.localized
+        title = L10n.Notifications.title
         [notificationCollectionView, createNotificationButton].forEach { view.addSubview($0) }
         notificationCollectionView.addSubview(isEmptyLabel)
     }

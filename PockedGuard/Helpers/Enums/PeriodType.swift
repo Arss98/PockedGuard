@@ -21,7 +21,7 @@ enum PeriodType: Equatable {
         switch self {
         case .day(let start):
             if Calendar.current.isDateInToday(start) {
-                return .Localized.Common.today.localized
+                return L10n.Common.today
             } else {
                 formatter.dateFormat = "dd MMMM"
                 return formatter.string(from: start)
@@ -166,17 +166,17 @@ extension PeriodType {
 // MARK: - Constants
 private enum Constants {
     static let monthSymbols: [String] = [
-        .Localized.Month.january.localized,
-        .Localized.Month.february.localized,
-        .Localized.Month.march.localized,
-        .Localized.Month.april.localized,
-        .Localized.Month.may.localized,
-        .Localized.Month.june.localized,
-        .Localized.Month.july.localized,
-        .Localized.Month.august.localized,
-        .Localized.Month.september.localized,
-        .Localized.Month.october.localized,
-        .Localized.Month.november.localized,
-        .Localized.Month.december.localized
+        L10n.Month.january,
+        L10n.Month.february,
+        L10n.Month.march,
+        L10n.Month.april,
+        L10n.Month.may,
+        L10n.Month.june,
+        L10n.Month.july,
+        L10n.Month.august,
+        L10n.Month.september,
+        L10n.Month.october,
+        L10n.Month.november,
+        L10n.Month.december
     ]
 }

@@ -15,10 +15,10 @@ enum ReminderType: Int16, CaseIterable {
     
     var localizedTitle: String {
         switch self {
-        case .once: return String.Localized.Notification.once.localized
-        case .everyDay: return String.Localized.Notification.everyDay.localized
-        case .everyWeek: return String.Localized.Notification.everyWeek.localized
-        case .everyMonth: return String.Localized.Notification.everyMonth.localized
+        case .once: return L10n.Notifications.once
+        case .everyDay: return L10n.Notifications.everyDay
+        case .everyWeek: return L10n.Notifications.everyWeek
+        case .everyMonth: return L10n.Notifications.everyMonth
         }
     }
 }

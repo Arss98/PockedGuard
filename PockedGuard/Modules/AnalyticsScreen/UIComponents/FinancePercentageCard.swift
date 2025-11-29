@@ -81,12 +81,12 @@ private extension FinancePercentageCard {
         switch type {
         case .expense:
             return percentage <= 0 ?
-                .Localized.Analytics.expensesDecreased.localized : .Localized.Analytics.expensesIncreased.localized
+            L10n.Analytics.Expenses.decreased("") : L10n.Analytics.Expenses.increased("")
         case .income:
             return percentage >= 0 ?
-                .Localized.Analytics.incomeIncreased.localized : .Localized.Analytics.incomeDecreased.localized
+            L10n.Analytics.Income.increased("") : L10n.Analytics.Income.decreased("")
         case .loss: return percentage <= 0 ?
-                .Localized.Analytics.lossDecreased.localized : .Localized.Analytics.lossIncreased.localized
+            L10n.Analytics.Loss.decreased("") : L10n.Analytics.Loss.increased("")
         }
     }
     

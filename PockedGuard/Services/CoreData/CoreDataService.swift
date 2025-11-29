@@ -193,7 +193,7 @@ private extension CoreDataService {
             let account: Account = Account(context: context)
             account.id = UUID()
             account.isPrimary = true
-            account.name = .Localized.Common.accountTitle.localized
+            account.name = L10n.Finance.defaultAccount
             account.balance = 0
             account.currency = "RUB"
             account.date = Date()
@@ -208,10 +208,10 @@ private extension CoreDataService {
     func createDefaultCategories() -> Completable {
         return performBackgroundTask { context in
             let incomeCategories: [(nameKey: String, color: String)] = [
-                (.Localized.IncomeCategories.salary.localized, "#4CAF50"),
-                (.Localized.IncomeCategories.investments.localized, "#2196F3"),
-                (.Localized.IncomeCategories.gifts.localized, "#FF9800"),
-                (.Localized.IncomeCategories.otherIncome.localized, "#607D8B")
+                (L10n.IncomeCategories.salary, "#4CAF50"),
+                (L10n.IncomeCategories.investments, "#2196F3"),
+                (L10n.IncomeCategories.gifts, "#FF9800"),
+                (L10n.IncomeCategories.other, "#607D8B")
             ]
             
             for category in incomeCategories {
@@ -224,12 +224,12 @@ private extension CoreDataService {
             }
             
             let expenseCategories: [(nameKey: String, color: String)] = [
-                (.Localized.TransactionCategories.health.localized, "#FF5252"),
-                (.Localized.TransactionCategories.products.localized, "#4CAF50"),
-                (.Localized.TransactionCategories.clothes.localized, "#2196F3"),
-                (.Localized.TransactionCategories.leisure.localized, "#FF9800"),
-                (.Localized.TransactionCategories.housing.localized, "#9C27B0"),
-                (.Localized.TransactionCategories.other.localized, "#607D8B")
+                (L10n.TransactionCategories.health, "#FF5252"),
+                (L10n.TransactionCategories.products, "#4CAF50"),
+                (L10n.TransactionCategories.clothes, "#2196F3"),
+                (L10n.TransactionCategories.leisure, "#FF9800"),
+                (L10n.TransactionCategories.housing, "#9C27B0"),
+                (L10n.TransactionCategories.other, "#607D8B")
             ]
             
             for category in expenseCategories {

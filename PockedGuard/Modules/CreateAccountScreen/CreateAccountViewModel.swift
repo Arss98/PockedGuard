@@ -156,9 +156,9 @@ private enum CustomError: Error, LocalizedError {
     var errorDescription: String? {
         switch self {
         case .invalidTitle:
-            return .Localized.Error.invalidNameAccount.localized
+            return L10n.Error.accountNameInvalid
         case .duplicateNameAccount:
-            return .Localized.Error.duplicateAccountName.localized
+            return L10n.Error.accountNameDuplicate
         }
     }
 }

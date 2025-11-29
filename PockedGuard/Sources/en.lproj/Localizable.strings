@@ -1,0 +1,188 @@
+/*
+  Localizable.strings
+  PockedGuard
+  
+  Created by Арсен Дадаев on 25.06.2025.
+  Updated for SwiftGen compatibility
+*/
+
+/* ===== COMMON ===== */
+"common.app_name" = "Pocked Guard";
+"common.today" = "Сегодня";
+"common.cancel" = "Отмена";
+"common.continue" = "Продолжить";
+"common.done" = "Готово";
+"common.edit" = "Редактировать";
+"common.delete" = "Удалить";
+"common.ok" = "Ок";
+"common.total" = "Итого";
+"common.icon" = "Иконка";
+"common.amount" = "Сумма";
+"common.analytics" = "Аналитика";
+"common.still" = "Еще";
+"common.wrap" = "Свернуть";
+"common.replace" = "Заменить";
+
+/* ===== FINANCE ===== */
+"finance.income" = "Доходы";
+"finance.expenses" = "Расходы";
+"finance.loss" = "Убыток";
+"finance.default_account" = "Основной счет";
+"finance.transactions.empty" = "Операции за выбранный период не найдены";
+"finance.categories.title" = "Категории и шаблоны";
+"finance.categories.categories" = "Категории";
+"finance.categories.templates" = "Шаблоны";
+"finance.categories.accounts" = "Счета";
+"finance.currency.rub" = "RUB";
+"finance.currency.usd" = "USD";
+"finance.currency.eur" = "EUR";
+
+/* ===== MONTHS ===== */
+"month.january" = "Январь";
+"month.february" = "Февраль";
+"month.march" = "Март";
+"month.april" = "Апрель";
+"month.may" = "Май";
+"month.june" = "Июнь";
+"month.july" = "Июль";
+"month.august" = "Август";
+"month.september" = "Сентябрь";
+"month.october" = "Октябрь";
+"month.november" = "Ноябрь";
+"month.december" = "Декабрь";
+
+/* ===== PERIODS ===== */
+"period.day" = "День";
+"period.week" = "Неделя";
+"period.month" = "Месяц";
+"period.year" = "Год";
+"period.title" = "Период";
+
+/* ===== NOTIFICATIONS ===== */
+"notifications.title" = "Напоминания";
+"notifications.create_title" = "Создать напоминание";
+"notifications.edit_title" = "Редактировать";
+"notifications.reminder_title" = "Заголовок";
+"notifications.title_placeholder" = "Заголовок напоминания";
+"notifications.text_placeholder" = "Текст напоминания";
+"notifications.text" = "Текст";
+"notifications.frequency" = "Периодичность";
+"notifications.time" = "Время";
+"notifications.start_date" = "Дата начала";
+"notifications.every_week" = "Каждую неделю";
+"notifications.every_month" = "Каждый месяц";
+"notifications.every_day" = "Каждый день";
+"notifications.once" = "Один раз";
+"notifications.empty" = "Ваш список напоминаний пуст. Добавьте новые напоминания, чтобы ничего не забыть!";
+
+/* ===== TRANSACTIONS ===== */
+"transactions.add.amount_zero" = "0";
+"transactions.add.description_placeholder" = "Комментарий...";
+"transactions.templates.title" = "Шаблоны операций";
+"transactions.templates.info" = "Шаблоны — это готовые\nповторяющиеся операции";
+"transactions.templates.empty" = "Список шаблонов пуст. Добавьте новые шаблоны, чтобы упростить добавление регулярных операций.";
+
+/* ===== CATEGORIES ===== */
+"categories.add_category" = "Добавить категорию";
+"categories.edit_category" = "Редактировать категорию";
+"categories.add_account" = "Добавить счет";
+"categories.edit_account" = "Редактировать счет";
+"categories.add_template" = "Добавить шаблон";
+"categories.edit_template" = "Редактировать шаблон";
+"categories.account_name" = "Название счета";
+"categories.account_name_placeholder" = "Введите название счета";
+"categories.currency_type" = "Тип валюты";
+"categories.category_name" = "Название категории";
+"categories.category_name_placeholder" = "Введите название категории";
+"categories.color_title" = "Цвет категории";
+"categories.amount_placeholder" = "Введите сумму (не обязательно)";
+"categories.set_primary" = "Сделать основным";
+"categories.template_amount_info" = "Укажите сумму, если хотите создать шаблон\nс фиксированной суммой транзакции.\nЕсли оставить поле пустым, сумму\nнужно будет вводить при каждой трате.";
+
+/* ===== TRANSACTION CATEGORIES ===== */
+"transaction_categories.health" = "Здоровье";
+"transaction_categories.products" = "Продукты";
+"transaction_categories.clothes" = "Одежда";
+"transaction_categories.leisure" = "Досуг";
+"transaction_categories.other" = "Другое";
+"transaction_categories.housing" = "Квартира и ЖКХ";
+
+/* ===== INCOME CATEGORIES ===== */
+"income_categories.salary" = "Зарплата";
+"income_categories.investments" = "Инвестиции";
+"income_categories.gifts" = "Подарки";
+"income_categories.other" = "Другое";
+
+/* ===== ERRORS ===== */
+"error.title" = "Ошибка";
+"error.field_empty" = "Поле не может быть пустым";
+"error.unknown" = "Произошла неизвестная ошибка";
+"error.accounts_empty" = "Счета не найдены. Сначала создайте счет";
+"error.templates_empty" = "Список шаблонов пуст";
+"error.categories_empty" = "Список категорий пуст";
+"error.title_empty" = "Поле заголовка не может быть пустым";
+"error.description_empty" = "Поле описания не может быть пустым";
+"error.amount_invalid" = "Сумма должна быть больше нуля";
+"error.notifications.update_failed" = "Не удалось обновить уведомление";
+"error.notifications.scheduling_failed" = "Не удалось запланировать уведомление";
+"error.notifications.fetch_failed" = "Не удалось загрузить уведомления";
+"error.notifications.delete_failed" = "Не удалось удалить уведомление";
+"error.data.create_default_failed" = "Ошибка при создании данных по умолчанию";
+"error.data.transactions_fetch_failed" = "Ошибка при загрузке операций";
+"error.data.accounts_fetch_failed" = "Ошибка при загрузке счетов";
+"error.data.fetch_failed" = "Ошибка при загрузке данных";
+"error.insufficient_funds" = "Недостаточно средств на счете";
+"error.category_not_selected" = "Пожалуйста, выберите категорию";
+"error.account_name_invalid" = "Необходимо ввести название счета";
+"error.category_name_invalid" = "Необходимо ввести название категории";
+"error.category_color_empty" = "Необходимо выбрать цвет категории";
+"error.template_icon_empty" = "Необходимо выбрать иконку шаблона";
+"error.template_category_or_amount_empty" = "Необходимо выбрать категорию или ввести сумму";
+"error.category_name_duplicate" = "Категория с таким названием уже существует";
+"error.account_name_duplicate" = "Счет с таким названием уже существует";
+
+/* ===== ALERTS ===== */
+"alerts.system_category.title" = "Системная категория";
+"alerts.system_category.message" = "Категория \"%@\" является системной. Вы уверены, что хотите %@ эту категорию?";
+"alerts.color_added" = "Цвет добавлен в палитру";
+"alerts.duplicate_template_icon.title" = "Иконка уже используется";
+"alerts.duplicate_template_icon.message" = "Обнаружен существующий шаблон с данной иконкой. Вы можете заменить его или выбрать другую иконку для нового шаблона.";
+"alerts.primary_account.title" = "Установить основной счет";
+"alerts.primary_account.message" = "Вы уверены, что хотите сделать счет \"%@\" основным? Это заменит текущий основной счет.";
+
+/* ===== ONBOARDING ===== */
+"onboarding.welcome.title" = "Управляйте своими\nфинансами с легкостью!";
+"onboarding.welcome.description" = "Удобная статистика\nСоздание счетов\nСобственные категории";
+"onboarding.analytics.description" = "Подробные отчеты\nГрафики и диаграммы";
+"onboarding.templates.description" = "Создавайте шаблоны\nдля регулярных трат";
+"onboarding.notifications.description" = "Создавайте собственные\nнапоминания для разных ситуаций";
+
+/* ===== ANALYTICS ===== */
+"analytics.rating.excellent" = "Отлично!";
+"analytics.rating.good" = "Так держать!";
+"analytics.rating.neutral" = "Стабильно";
+"analytics.rating.warning" = "Внимание!";
+"analytics.expenses.decreased" = "Ваши расходы сократились на %@";
+"analytics.income.increased" = "Ваш доход вырос на %@";
+"analytics.loss.decreased" = "Ваш убыток уменьшился на %@";
+"analytics.expenses.increased" = "Ваши расходы увеличились на %@";
+"analytics.income.decreased" = "Ваш доход сократился на %@";
+"analytics.loss.increased" = "Ваш убыток возрос на %@";
+"analytics.empty" = "Начните вести учёт, и система покажет, как ваши финансы меняются во времени: за день, неделю, месяц или год";
+
+/* ===== PIN ===== */
+"pin.create_required" = "Для входа в приложение требуется создать PIN-код";
+"pin.change_new" = "Введите новый PIN-код";
+"pin.confirm_placeholder" = "Повторите введенный PIN-код для подтверждения";
+"pin.confirm_error" = "Повторно введенный PIN-код содержит ошибку";
+"pin.success_created" = "PIN-код успешно создан";
+"pin.enter_placeholder" = "Введите PIN-код";
+"pin.confirm_current_placeholder" = "Введите текущий PIN-код для подтверждения";
+"pin.forgot_title" = "Забыли PIN-код?";
+"pin.attempts_left" = "Осталось попыток: %d";
+"pin.locked" = "Приложение заблокировано на %d секунд из-за слишком частых попыток";
+"pin.mismatch" = "PIN не совпадают";
+"pin.incorrect" = "Неверный PIN";
+"pin.save_error" = "Ошибка сохранения PIN";
+"pin.bimetric_reason" = "Войти с помощью Face ID";
+"pin.localized_fallback_title" = "Ввести PIN-код";

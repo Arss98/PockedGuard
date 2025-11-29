@@ -124,7 +124,7 @@ final class MainViewController: BaseViewController {
         label.textColor = .white
         label.font = .systemFont(ofSize: Constants.Text.fontSize, weight: .regular)
         label.textAlignment = .center
-        label.text = .Localized.Common.transactionsEmptyLabel.localized
+        label.text = L10n.Finance.Transactions.empty
         label.isHidden = true
         return label
     }()
@@ -182,7 +182,7 @@ private extension MainViewController {
     }
     
     func inputBindings() {
-        setupLeftBarButtonItem(at: .right, image: .remindingIcon)
+        setupBarButtonItem(at: .right, image: .remindingIcon)
             .bind(to: viewModel.output.showNotification)
             .disposed(by: disposeBag)
         
@@ -538,15 +538,16 @@ private enum Constants {
     
     enum SegmentedControl {
         static let financeItems: [String] = [
-            .Localized.Common.expenses.localized,
-            .Localized.Common.income.localized
+            L10n.Finance.expenses,
+            L10n.Finance.income
         ]
         
         static let periodItems: [String] = [
-            .Localized.Period.day.localized,
-            .Localized.Period.week.localized,
-            .Localized.Period.month.localized,
-            .Localized.Common.period.localized
+            L10n.Period.day,
+            L10n.Period.week,
+            L10n.Period.month,
+            L10n.Period.title
         ]
     }
 }
+

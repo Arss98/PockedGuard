@@ -88,7 +88,7 @@ private extension AddViewModel {
                 self?.output.accounts.accept(accounts)
                 
                 if let defaultAccount = accounts.first(
-                    where: {$0.name == .Localized.Common.accountTitle.localized}) {
+                    where: {$0.name == L10n.Finance.defaultAccount}) {
                     self?.input.selectedAccount.accept(defaultAccount)
                 }
             })
@@ -232,21 +232,21 @@ private enum CustomError: Error, LocalizedError {
     var errorDescription: String? {
         switch self {
         case .invalidAmount:
-            return .Localized.Error.amountError.localized
+            return L10n.Error.amountInvalid
         case .insufficientFunds:
-            return .Localized.Error.insufficientFunds.localized
+            return L10n.Error.insufficientFunds
         case .categoryNotSelected:
-            return .Localized.Error.categoryNotSelectedError.localized
+            return L10n.Error.categoryNotSelected
         case .accountNotFound:
-            return .Localized.Error.accountEmpty.localized
+            return L10n.Error.accountsEmpty
         case .templatesEmpty:
-            return .Localized.Error.templatesEmpty.localized
+            return L10n.Error.templatesEmpty
         case .categoriesEmpty:
-            return .Localized.Error.categoriesEmpty.localized
+            return L10n.Error.categoriesEmpty
         case .coreDataFailure(let message):
             return message
         case .unknown:
-            return .Localized.Error.unknown.localized
+            return L10n.Error.unknown
         }
     }
 }

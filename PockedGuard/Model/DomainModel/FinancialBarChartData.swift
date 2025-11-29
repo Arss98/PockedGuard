@@ -21,9 +21,9 @@ enum FinancialCategory: String, CaseIterable {
     
     var localizedName: String {
         switch self {
-        case .income: return .Localized.Common.income.localized
-        case .expense: return .Localized.Common.expenses.localized
-        case .loss: return .Localized.Common.loss.localized
+        case .income: return L10n.Finance.income
+        case .expense: return L10n.Finance.expenses
+        case .loss: return L10n.Finance.loss
         }
     }
     

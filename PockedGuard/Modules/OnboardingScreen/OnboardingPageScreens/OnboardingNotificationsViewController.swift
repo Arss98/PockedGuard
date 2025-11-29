@@ -30,7 +30,7 @@ final class OnboardingNotificationsViewController: UIViewController {
         label.textColor = .white
         label.textAlignment = .center
         label.font = .systemFont(ofSize: Constants.Text.titleFontSize, weight: .medium)
-        label.text = .Localized.Notification.title.localized
+        label.text = L10n.Notifications.title
         return label
     }()
     
@@ -41,7 +41,7 @@ final class OnboardingNotificationsViewController: UIViewController {
         label.textAlignment = .center
         label.numberOfLines = .zero
         label.font = .systemFont(ofSize: Constants.Text.descriptionFontSize, weight: .regular)
-        label.text = .Localized.Onboarding.templatesDescription.localized
+        label.text = L10n.Onboarding.Notifications.description
         return label
     }()
     

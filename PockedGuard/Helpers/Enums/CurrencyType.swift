@@ -12,9 +12,10 @@ enum CurrencyType: String, CaseIterable {
     
     var localizedTitle: String {
         switch self {
-        case .rub: return .Localized.Common.RUB.localized
-        case .usd: return .Localized.Common.USD.localized
-        case .eur: return .Localized.Common.EUR.localized
+        case .rub: return
+            L10n.Finance.Currency.rub
+        case .usd: return L10n.Finance.Currency.usd
+        case .eur: return L10n.Finance.Currency.eur
         }
     }
     

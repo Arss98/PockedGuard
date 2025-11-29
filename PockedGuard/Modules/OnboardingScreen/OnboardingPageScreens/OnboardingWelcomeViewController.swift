@@ -39,7 +39,7 @@ final class OnboardingWelcomeViewController: UIViewController {
         label.textAlignment = .center
         label.numberOfLines = .zero
         label.font = .systemFont(ofSize: Constants.Text.titleFontSize, weight: .medium)
-        label.text = .Localized.Onboarding.welcomeTitle.localized
+        label.text = L10n.Onboarding.Welcome.title
         return label
     }()
     
@@ -50,7 +50,7 @@ final class OnboardingWelcomeViewController: UIViewController {
         label.textAlignment = .center
         label.numberOfLines = .zero
         label.font = .systemFont(ofSize: Constants.Text.descriptionFontSize, weight: .regular)
-        label.text = .Localized.Onboarding.welcomeDescription.localized
+        label.text = L10n.Onboarding.Welcome.description
         return label
     }()
     

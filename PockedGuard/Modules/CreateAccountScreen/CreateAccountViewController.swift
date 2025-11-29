@@ -16,7 +16,7 @@ final class CreateAccountViewController: BaseViewController {
         label.translatesAutoresizingMaskIntoConstraints = false
         label.textColor = .white
         label.font = .systemFont(ofSize: Constants.Text.titleFontSize, weight: .semibold)
-        label.text = .Localized.Add.addAccount.localized
+        label.text = L10n.Categories.addAccount
         
         return label
     }()
@@ -32,8 +32,8 @@ final class CreateAccountViewController: BaseViewController {
     private lazy var accountNameTextField: CustomTextField = {
         let textfield: CustomTextField = .init()
         textfield.configure(
-            with: .Localized.Add.accountNameLabel.localized,
-            placeholder: .Localized.Add.accountNamePlaceholder.localized,
+            with: L10n.Categories.accountName,
+            placeholder: L10n.Categories.accountNamePlaceholder,
             titleColor: .white
         )
         return textfield
@@ -43,14 +43,14 @@ final class CreateAccountViewController: BaseViewController {
         let label: UILabel = .init()
         label.textColor = .white
         label.font = .systemFont(ofSize: Constants.Text.fontSize, weight: .regular)
-        label.text = .Localized.Add.accountCurrencyType.localized
+        label.text = L10n.Categories.currencyType
         
         return label
     }()
     
     private lazy var currencyButton: UIButton = {
         let button: UIButton = .init(type: .system)
-        button.setTitle(.Localized.Common.RUB.localized, for: .normal)
+        button.setTitle(L10n.Finance.Currency.rub, for: .normal)
         button.setTitleColor(.white, for: .normal)
         button.titleLabel?.font = .systemFont(ofSize: Constants.Text.fontSize, weight: .regular)
         return button
@@ -66,7 +66,7 @@ final class CreateAccountViewController: BaseViewController {
     private lazy var doneButton: UIButton = {
         let button: UIButton = .init(type: .system)
         button.translatesAutoresizingMaskIntoConstraints = false
-        button.setTitle(.Localized.Common.done.localized, for: .normal)
+        button.setTitle(L10n.Common.done, for: .normal)
         button.backgroundColor = .appMainBlue
         button.tintColor = .white
         button.layer.cornerRadius = Constants.Layout.buttonCornerRadius
@@ -143,7 +143,7 @@ private extension CreateAccountViewController {
         if case .edit = viewModel.mode {
             accountNameTextField.text = viewModel.input.title.value
             currencyButton.setTitle(viewModel.input.currencyType.value.localizedTitle, for: .normal)
-            titleLabel.text = .Localized.Add.editAccount.localized
+            titleLabel.text = L10n.Categories.editAccount
         }
     }
     

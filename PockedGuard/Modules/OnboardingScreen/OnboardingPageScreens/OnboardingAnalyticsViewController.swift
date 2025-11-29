@@ -38,7 +38,7 @@ final class OnboardingAnalyticsViewController: UIViewController {
         label.textColor = .white
         label.textAlignment = .center
         label.font = .systemFont(ofSize: Constants.Text.titleFontSize, weight: .medium)
-        label.text = .Localized.Common.analytics.localized
+        label.text = L10n.Common.analytics
         return label
     }()
     
@@ -49,7 +49,7 @@ final class OnboardingAnalyticsViewController: UIViewController {
         label.textAlignment = .center
         label.numberOfLines = .zero
         label.font = .systemFont(ofSize: Constants.Text.descriptionFontSize, weight: .regular)
-        label.text = .Localized.Onboarding.analyticsDescription.localized
+        label.text = L10n.Onboarding.Analytics.description
         return label
     }()
     

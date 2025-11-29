@@ -7,21 +7,21 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		A8367CAB86D82E1BD98D0CA9 /* Pods_PockedGuard.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 71C1FB42AB3E8CDA582EA0CA /* Pods_PockedGuard.framework */; };
+		558A0344C9A8C242BC0DD138 /* Pods_PockedGuard.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 880C80B99901EDC5393CBCE5 /* Pods_PockedGuard.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		3461C9485171B60DF1BD74D2 /* Pods-PockedGuard.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-PockedGuard.debug.xcconfig"; path = "Target Support Files/Pods-PockedGuard/Pods-PockedGuard.debug.xcconfig"; sourceTree = "<group>"; };
-		42D20F9E622F8115A7C49402 /* Pods-PockedGuard.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-PockedGuard.release.xcconfig"; path = "Target Support Files/Pods-PockedGuard/Pods-PockedGuard.release.xcconfig"; sourceTree = "<group>"; };
-		71C1FB42AB3E8CDA582EA0CA /* Pods_PockedGuard.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_PockedGuard.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		229DE16BD9B2B373D5B25903 /* Pods-PockedGuard.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-PockedGuard.release.xcconfig"; path = "Target Support Files/Pods-PockedGuard/Pods-PockedGuard.release.xcconfig"; sourceTree = "<group>"; };
 		72DA42252D7C362E0004EC6A /* PockedGuard.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PockedGuard.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		880C80B99901EDC5393CBCE5 /* Pods_PockedGuard.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_PockedGuard.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		E9F97A4DC6C778A54E3FFAD6 /* Pods-PockedGuard.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-PockedGuard.debug.xcconfig"; path = "Target Support Files/Pods-PockedGuard/Pods-PockedGuard.debug.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
 		72DA42372D7C362F0004EC6A /* Exceptions for "PockedGuard" folder in "PockedGuard" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				Resources/Info.plist,
+				Sources/Info.plist,
 			);
 			target = 72DA42242D7C362E0004EC6A /* PockedGuard */;
 		};
@@ -43,28 +43,20 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A8367CAB86D82E1BD98D0CA9 /* Pods_PockedGuard.framework in Frameworks */,
+				558A0344C9A8C242BC0DD138 /* Pods_PockedGuard.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		2DCFAF5A9ED582D2F71579C9 /* Frameworks */ = {
-			isa = PBXGroup;
-			children = (
-				71C1FB42AB3E8CDA582EA0CA /* Pods_PockedGuard.framework */,
-			);
-			name = Frameworks;
-			sourceTree = "<group>";
-		};
 		72DA421C2D7C362E0004EC6A = {
 			isa = PBXGroup;
 			children = (
 				72DA42272D7C362E0004EC6A /* PockedGuard */,
 				72DA42262D7C362E0004EC6A /* Products */,
 				79F3670F15E1DC1D15C020ED /* Pods */,
-				2DCFAF5A9ED582D2F71579C9 /* Frameworks */,
+				81042AF9461EBA1C5F68AA38 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -79,10 +71,18 @@
 		79F3670F15E1DC1D15C020ED /* Pods */ = {
 			isa = PBXGroup;
 			children = (
-				3461C9485171B60DF1BD74D2 /* Pods-PockedGuard.debug.xcconfig */,
-				42D20F9E622F8115A7C49402 /* Pods-PockedGuard.release.xcconfig */,
+				E9F97A4DC6C778A54E3FFAD6 /* Pods-PockedGuard.debug.xcconfig */,
+				229DE16BD9B2B373D5B25903 /* Pods-PockedGuard.release.xcconfig */,
 			);
 			path = Pods;
+			sourceTree = "<group>";
+		};
+		81042AF9461EBA1C5F68AA38 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				880C80B99901EDC5393CBCE5 /* Pods_PockedGuard.framework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -92,11 +92,12 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 72DA42382D7C362F0004EC6A /* Build configuration list for PBXNativeTarget "PockedGuard" */;
 			buildPhases = (
-				6B44C9E4C84470D207FEA32A /* [CP] Check Pods Manifest.lock */,
+				2B928849F1619090DFDE607D /* [CP] Check Pods Manifest.lock */,
+				7204B7C62ED7953D00B426AE /* Generate Localizations */,
 				72DA42212D7C362E0004EC6A /* Sources */,
 				72DA42222D7C362E0004EC6A /* Frameworks */,
 				72DA42232D7C362E0004EC6A /* Resources */,
-				A9F092CBF6B9D371D904895D /* [CP] Embed Pods Frameworks */,
+				E640DDEBC4780A036DDA5FDA /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -118,7 +119,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1610;
-				LastUpgradeCheck = 1610;
+				LastUpgradeCheck = 2610;
 				TargetAttributes = {
 					72DA42242D7C362E0004EC6A = {
 						CreatedOnToolsVersion = 16.1;
@@ -155,7 +156,7 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		6B44C9E4C84470D207FEA32A /* [CP] Check Pods Manifest.lock */ = {
+		2B928849F1619090DFDE607D /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -177,7 +178,27 @@
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
 		};
-		A9F092CBF6B9D371D904895D /* [CP] Embed Pods Frameworks */ = {
+		7204B7C62ED7953D00B426AE /* Generate Localizations */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Generate Localizations";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(SRCROOT)/PockedGuard/Sources/Generated/L10n.swift",
+				"$(SRCROOT)/PockedGuard/Sources/Generated/Assets.swift",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "SWIFTGEN_PATH=\"${PODS_ROOT}/SwiftGen/bin/swiftgen\"\n\n# Проверяем существование SwiftGen\nif [ ! -f \"${SWIFTGEN_PATH}\" ]; then\n    exit 1\nfi\n\nCONFIG_PATH=\"${PROJECT_DIR}/.swiftgen.yml\"\nif [ ! -f \"${CONFIG_PATH}\" ]; then\n    exit 1\nfi\n\n\"${SWIFTGEN_PATH}\" config run --config \"${CONFIG_PATH}\" --verbose\n\n# Проверяем результат\nif [ $? -eq 0 ]; then\n    find \"${PROJECT_DIR}\" -name \"L10n.swift\" -o -name \"Assets.swift\" | sed 's/^/   • /'\nelse\n    exit 1\nfi\n";
+		};
+		E640DDEBC4780A036DDA5FDA /* [CP] Embed Pods Frameworks */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -185,9 +206,13 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-PockedGuard/Pods-PockedGuard-frameworks-${CONFIGURATION}-input-files.xcfilelist",
 			);
+			inputPaths = (
+			);
 			name = "[CP] Embed Pods Frameworks";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-PockedGuard/Pods-PockedGuard-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -209,7 +234,7 @@
 /* Begin XCBuildConfiguration section */
 		72DA42392D7C362F0004EC6A /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 3461C9485171B60DF1BD74D2 /* Pods-PockedGuard.debug.xcconfig */;
+			baseConfigurationReference = E9F97A4DC6C778A54E3FFAD6 /* Pods-PockedGuard.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -218,7 +243,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = QBXST696YP;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = PockedGuard/Resources/Info.plist;
+				INFOPLIST_FILE = PockedGuard/Sources/Info.plist;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
@@ -243,7 +268,7 @@
 		};
 		72DA423A2D7C362F0004EC6A /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 42D20F9E622F8115A7C49402 /* Pods-PockedGuard.release.xcconfig */;
+			baseConfigurationReference = 229DE16BD9B2B373D5B25903 /* Pods-PockedGuard.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -252,7 +277,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = QBXST696YP;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = PockedGuard/Resources/Info.plist;
+				INFOPLIST_FILE = PockedGuard/Sources/Info.plist;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;

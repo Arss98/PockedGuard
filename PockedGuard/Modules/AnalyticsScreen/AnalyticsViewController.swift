@@ -69,7 +69,7 @@ final class AnalyticsViewController: BaseViewController {
         label.translatesAutoresizingMaskIntoConstraints = false
         label.textColor = .white
         label.textAlignment = .center
-        label.text = .Localized.Analytics.emptyViewMessage.localized
+        label.text = L10n.Analytics.empty
         label.numberOfLines = .zero
         label.font = .systemFont(ofSize: Constants.Text.emptyLabelFontSize, weight: .regular)
         return label
@@ -158,7 +158,7 @@ private extension AnalyticsViewController {
 // MARK: - UI Setup
 private extension AnalyticsViewController {
     func setupUI () {
-        title = .Localized.Common.analytics.localized
+        title = L10n.Common.analytics
         
         emptyAnalyticsContainerView.addSubview(emptyAnalyticsLabel)
         
@@ -299,15 +299,15 @@ private enum Constants {
     
     enum SegmentedControl {
         static let financeItems: [String] = [
-            .Localized.Common.expenses.localized,
-            .Localized.Common.income.localized
+            L10n.Finance.expenses,
+            L10n.Finance.income
         ]
         
         static let periodItems: [String] = [
-            .Localized.Period.day.localized,
-            .Localized.Period.week.localized,
-            .Localized.Period.month.localized,
-            .Localized.Period.year.localized
+            L10n.Period.day,
+            L10n.Period.week,
+            L10n.Period.month,
+            L10n.Period.year
         ]
     }
 }

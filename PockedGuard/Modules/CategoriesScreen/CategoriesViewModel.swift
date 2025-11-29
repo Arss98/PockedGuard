@@ -249,13 +249,13 @@ private enum CustomError: Error, LocalizedError {
     var errorDescription: String? {
         switch self {
         case .accountNotFound:
-            return .Localized.Error.accountEmpty.localized
+            return L10n.Error.accountsEmpty
         case .templatesEmpty:
-            return .Localized.Error.templatesEmpty.localized
+            return L10n.Error.templatesEmpty
         case .categoriesEmpty:
-            return .Localized.Error.categoriesEmpty.localized
+            return L10n.Error.categoriesEmpty
         case .unknown:
-            return .Localized.Error.unknown.localized
+            return L10n.Error.unknown
         }
     }
 }

@@ -13,16 +13,16 @@ final class CreateNotificationViewController: BaseViewController {
     private lazy var headingTextField: CustomTextField = {
         let textField: CustomTextField = .init()
         textField.configure(
-            with: .Localized.Notification.reminderTitle.localized,
-            placeholder: .Localized.Notification.titlePlaceholder.localized)
+            with: L10n.Notifications.reminderTitle,
+            placeholder: L10n.Notifications.titlePlaceholder)
         return textField
     }()
     
     private lazy var descriptionTextField: CustomTextField = {
         let textField: CustomTextField = .init()
         textField.configure(
-            with: .Localized.Notification.reminderText.localized,
-            placeholder: .Localized.Notification.textPlaceholder.localized)
+            with: L10n.Notifications.text,
+            placeholder: L10n.Notifications.textPlaceholder)
         return textField
     }()
     
@@ -30,14 +30,14 @@ final class CreateNotificationViewController: BaseViewController {
         let label: UILabel = .init()
         label.textColor = .white
         label.font = .systemFont(ofSize: Constants.Text.fontSize, weight: .regular)
-        label.text = .Localized.Notification.frequency.localized
+        label.text = L10n.Notifications.frequency
         
         return label
     }()
     
     private lazy var periodButton: UIButton = {
         let button: UIButton = .init()
-        button.setTitle(.Localized.Notification.once.localized, for: .normal)
+        button.setTitle(L10n.Notifications.once, for: .normal)
         button.setTitleColor(.white, for: .normal)
         button.titleLabel?.font = .systemFont(ofSize: Constants.Text.fontSize,
                                               weight: .regular)
@@ -55,7 +55,7 @@ final class CreateNotificationViewController: BaseViewController {
     private lazy var timeLabel: UILabel = {
         let label: UILabel = .init()
         label.textColor = .white
-        label.text = .Localized.Notification.time.localized
+        label.text = L10n.Notifications.time
         label.font = .systemFont(ofSize: Constants.Text.fontSize, weight: .regular)
         
         return label
@@ -84,7 +84,7 @@ final class CreateNotificationViewController: BaseViewController {
     private lazy var dateLabel: UILabel = {
         let label: UILabel = .init()
         label.textColor = .white
-        label.text = .Localized.Notification.startDate.localized
+        label.text = L10n.Notifications.startDate
         label.font = .systemFont(ofSize: Constants.Text.fontSize, weight: .regular)
         
         return label
@@ -110,7 +110,7 @@ final class CreateNotificationViewController: BaseViewController {
     private lazy var doneButton: UIButton = {
         let button: UIButton = .init(type: .system)
         button.translatesAutoresizingMaskIntoConstraints = false
-        button.setTitle(.Localized.Common.done.localized, for: .normal)
+        button.setTitle(L10n.Common.done, for: .normal)
         button.backgroundColor = .appMainBlue
         button.tintColor = .white
         button.layer.cornerRadius = Constants.Layout.buttonCornerRadius
@@ -164,7 +164,7 @@ private extension CreateNotificationViewController {
             datePicker.date = viewModel.input.date.value
             periodButton.setTitle(viewModel.input.reminderType.value.localizedTitle, for: .normal)
             
-            title = .Localized.Notification.edit.localized
+            title = L10n.Notifications.editTitle
         }
     }
     
@@ -293,7 +293,7 @@ private extension CreateNotificationViewController {
 // MARK: - Private methods
 private extension CreateNotificationViewController {
     func setupUI() {
-        title = .Localized.Notification.createTitle.localized
+        title = L10n.Notifications.createTitle
         [headingTextField, descriptionTextField, periodStackView, timeStackView, dateStackView, doneButton].forEach { view.addSubview($0) }
     }
     

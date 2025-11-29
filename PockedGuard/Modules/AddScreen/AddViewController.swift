@@ -15,7 +15,7 @@ final class AddViewController: BaseViewController {
     
     private lazy var templatesInfoTooltip: InfoTooltipView = {
         let tooltip: InfoTooltipView = .init(frame: .zero)
-        tooltip.configure(with: .Localized.Add.templatesInfo.localized)
+        tooltip.configure(with: L10n.Categories.templateAmountInfo)
         tooltip.alpha = .zero
         return tooltip
     }()
@@ -71,7 +71,7 @@ final class AddViewController: BaseViewController {
         textField.keyboardType = .decimalPad
         textField.overrideUserInterfaceStyle = .dark
         
-        let placeholderText: String = .Localized.Add.amountZeroPlaceholder.localized
+        let placeholderText: String = L10n.Categories.amountPlaceholder
         let attributes: [NSAttributedString.Key: Any] = [
             .foregroundColor: UIColor.white,
             .font: UIFont.systemFont(ofSize: Constants.Text.amountTextFieldFontSize, weight: .semibold)
@@ -88,7 +88,7 @@ final class AddViewController: BaseViewController {
         textField.font = .systemFont(ofSize: Constants.Text.fontSize, weight: .regular)
         textField.overrideUserInterfaceStyle = .dark
         
-        let placeholderText: String = .Localized.Add.descriptionPlaceholder.localized
+        let placeholderText: String = L10n.Transactions.Add.descriptionPlaceholder
         let attributes: [NSAttributedString.Key: Any] = [
             .foregroundColor: UIColor.appForegroundSecondary,
             .font: UIFont.systemFont(ofSize: Constants.Text.fontSize, weight: .regular),
@@ -102,7 +102,7 @@ final class AddViewController: BaseViewController {
         let label: UILabel = .init()
         label.textColor = .white
         label.font = .systemFont(ofSize: Constants.Text.labelFontSize, weight: .semibold)
-        label.text = .Localized.Add.templatesTitle.localized
+        label.text = L10n.Transactions.Templates.title
         return label
     }()
     
@@ -143,7 +143,7 @@ final class AddViewController: BaseViewController {
     private lazy var emptyTemplatesLabel: UILabel = {
         let label: UILabel = .init()
         label.translatesAutoresizingMaskIntoConstraints = false
-        label.text = .Localized.Add.templatesIsEmptyLabel.localized
+        label.text = L10n.Transactions.Templates.empty
         label.textColor = .white
         label.numberOfLines = 0
         label.font = .systemFont(ofSize: Constants.Text.fontSize, weight: .regular)
@@ -157,7 +157,7 @@ final class AddViewController: BaseViewController {
         label.translatesAutoresizingMaskIntoConstraints = false
         label.font = .systemFont(ofSize: Constants.Text.labelFontSize, weight: .semibold)
         label.textColor = .white
-        label.text = .Localized.Common.categoryLabelTitle.localized
+        label.text = L10n.Finance.Categories.categories
         return label
     }()
     
@@ -205,7 +205,7 @@ final class AddViewController: BaseViewController {
         button.tintColor = .white
         button.backgroundColor = .appMainBlue
         button.layer.cornerRadius = Constants.Layout.buttonCornerRadius
-        button.setTitle(.Localized.Common.done.localized, for: .normal)
+        button.setTitle(L10n.Common.done, for: .normal)
         
         return button
     }()
@@ -520,7 +520,7 @@ private extension AddViewController {
     }
     
     func updateCurrencyDisplay(symbol: String) {
-        let placeholderText: String = .Localized.Add.amountZeroPlaceholder.localized
+        let placeholderText: String = L10n.Transactions.Add.amountZero
         let attributes: [NSAttributedString.Key: Any] = [
             .foregroundColor: UIColor.white,
             .font: UIFont.systemFont(ofSize: Constants.Text.amountTextFieldFontSize, weight: .semibold)
@@ -664,7 +664,9 @@ private enum Constants {
     }
     
     enum SegmentItem {
-        static let finance: [String] = [.Localized.Common.expenses.localized,
-                                                             .Localized.Common.income.localized]
+        static let finance: [String] = [
+            L10n.Finance.expenses,
+            L10n.Finance.income
+        ]
     }
 }

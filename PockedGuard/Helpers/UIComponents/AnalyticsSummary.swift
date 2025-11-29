@@ -21,10 +21,10 @@ enum PerformanceRating {
     
     var message: String {
         switch self {
-        case .excellent: return .Localized.Analytics.excellent.localized
-        case .good: return .Localized.Analytics.good.localized
-        case .neutral: return .Localized.Analytics.neutral.localized
-        case .warning: return .Localized.Analytics.warning.localized
+        case .excellent: return L10n.Analytics.Rating.excellent
+        case .good: return L10n.Analytics.Rating.good
+        case .neutral: return L10n.Analytics.Rating.neutral
+        case .warning: return L10n.Analytics.Rating.warning
         }
     }
     
